@@ -3,9 +3,11 @@ import asyncio
 
 
 async def get_info(orgin_city, dest_city, start_date, end_date):
-    browser = await launch(headless=False,autoClose=False)
+    prices = []
+    cities = []
+    browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
     page = await browser.newPage()
-    await page.goto('https://www.fluege.de/', )
+    await page.goto('https://www.fluege.de/', timeout=50000)
     await page.type('[id=f0-dep-location-]', orgin_city)
     await page.type('[id=f0-arr-location-]', dest_city)
     await page.click('[id=f0Date]', {'clickCount': 3})
@@ -15,11 +17,28 @@ async def get_info(orgin_city, dest_city, start_date, end_date):
     await page.keyboard.press('Backspace')
     await page.type('[id=f1Date]', end_date)
     await page.keyboard.press('Enter')
-    await asyncio.wait([page.waitForSelector('div.price js_regularCustomerPrice-active')])
+    # await asyncio.wait([page.waitForXPath('//div/a[contains(@class, "js_select-airport")]',timeout=50000)])
+    if await page.waitForXPath('//div/a[contains(@class, "js_select-airport")]', timeout=50000):
+        await page.click('[class=main-airport]')
+        await page.waitForXPath('//div/a[contains(@class, "js_select-airport")]', timeout=50000)
+        await page.click('[class=main-airport]')
+    else:
+        pass
+    await asyncio.wait([page.waitForXPath('//div[contains(@class,"column-price-flag")]', timeout=90000)])
+    await asyncio.wait([page.waitForXPath('//div/span[contains(@class,"city highlight")]', timeout=90000)])
 
-    price = await page.querySelectorAll('div.price js_regularCustomerPrice-active')
+    price = await page.xpath('//div[contains(@class,"column-price-flag")]')
     for i in price:
         price_txt = await page.evaluate('(element) => element.textContent', i)
-        print(price_txt)
+        prices.append(price_txt)
+        prices = [x.replace('\n', '') for x in prices]
+    print(prices)
 
-asyncio.get_event_loop().run_until_complete(get_info('Paris CDG','Berlin SXF','20.12.2020','25.12.2020'))
+    # city = await page.xpath('//div/span[contains(@class,"city highlight")]')
+    # for c in city:
+    #     city_txt = await page.evaluate('(element) => element.textContent', c)
+    #     cities.append(city_txt)
+    #     cities = [x.replace('\n', '') for x in cities]
+    # print(cities)
+    # print(dict(zip(prices,cities)))
+asyncio.get_event_loop().run_until_complete(get_info('Germany','Istanbul','25.12.2020','28.12.2020'))
