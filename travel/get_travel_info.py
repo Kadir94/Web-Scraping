@@ -1,5 +1,6 @@
 from pyppeteer import launch
 import asyncio
+import time
 
 
 async def get_info(orgin_city, dest_city, start_date, end_date):
@@ -18,12 +19,17 @@ async def get_info(orgin_city, dest_city, start_date, end_date):
     await page.type('[id=f1Date]', end_date)
     await page.keyboard.press('Enter')
     # await asyncio.wait([page.waitForXPath('//div/a[contains(@class, "js_select-airport")]',timeout=50000)])
-    if await page.waitForXPath('//div/a[contains(@class, "js_select-airport")]', timeout=50000):
-        await page.click('[class=main-airport]')
-        await page.waitForXPath('//div/a[contains(@class, "js_select-airport")]', timeout=50000)
-        await page.click('[class=main-airport]')
+    if await page.waitForXPath('//div/a[contains(@class, "js_select-airport")]',timeout=50000):
+        await asyncio.wait(page.click('[class=main-airport]'))
     else:
         pass
+    time.sleep(5)
+    if await page.waitForXPath('//div/a[contains(@class, "parent-airport")]',Visible=True, timeout=50000):
+        # clk = '[class=parent-airport]'
+        await page.click('[class=main-airport]',visible=True)
+    else:
+        pass
+
     await asyncio.wait([page.waitForXPath('//div[contains(@class,"column-price-flag")]', timeout=90000)])
     await asyncio.wait([page.waitForXPath('//div/span[contains(@class,"city highlight")]', timeout=90000)])
 
@@ -41,4 +47,4 @@ async def get_info(orgin_city, dest_city, start_date, end_date):
     #     cities = [x.replace('\n', '') for x in cities]
     # print(cities)
     # print(dict(zip(prices,cities)))
-asyncio.get_event_loop().run_until_complete(get_info('Germany','Istanbul','25.12.2020','28.12.2020'))
+asyncio.get_event_loop().run_until_complete(get_info('Germany','France','25.12.2020','28.12.2020'))
