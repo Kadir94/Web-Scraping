@@ -19,6 +19,7 @@ async def get_info(origin, destination,date):
     dep_times = []
     prices = []
     locs = []
+    arrival_locs = []
     dct = {'DepartureLoc': [], 'ArrivalLoc': [],'DepartureTime': [], 'ArrivalTime': [],  'price': []}
     browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
     page = await browser.newPage()
@@ -37,20 +38,26 @@ async def get_info(origin, destination,date):
         await page.keyboard.press('Enter')
     except Exception:
         logger.error('Invalid Destination City Name')
-
-    await page.click('[id=travelDate]', {'clickCount': 1})
-    await page.waitForXPath('//*[@class="calendar-table"]',{'visible': True, 'timeout': 50000})
-    await page.waitForXPath('//tr/td[contains(@class,"available")]',{'visible': True, 'timeout': 50000})
-    # chosen_date = await page.xpath('//tr/td[contains(@class,"available")]'
-    # chosen_date = await page.evaluate('(td class="available" data-title="r3c4">25</td) => element.textContent',date)
-    # await page.click(chosen_date[0], {'clickCount': 1})
-    # await chosen_date[0].click()  <td class="available" data-title="r3c4">25</td>
+    # await page.click('[id=travelDate]', {'clickCount': 1})
+    # await page.waitForXPath('//*[@class="calendar-table"]',{'visible': True, 'timeout': 50000})
+    # try:
+    #     month_changer = await page.waitForXPath('//*[@class="next available"]',{'visible': True, 'timeout': 50000})
+    # except Exception:
+    #     logger.error('Month changer was not found ...')
+    # right_window = None
+    # while True:
+    #     try:
+    #         right_window = await page.waitForXPath(".//*[@class='month'{int(date.split('/')[1])-1}']",{'visible': True, 'timeout': 50000})
+    #     except Exception:
+    #         pass
+    #     if right_window:
+    #         right_window.xpath('.//div[@class=calendar-time]')
     await asyncio.wait([page.waitForXPath('//tr/td[contains(@class,"date-time")]',{'visible': True, 'timeout': 90000})])
 
     time = await page.xpath('//tr/td[contains(@class,"date-time")]')
     price = await page.xpath('//div[contains(@class,"price-column w-100")]')
-    locations = await page.xpath('//td/small[contains(@class, "station-address")]')
-
+    locations = await page.xpath('//td/span[contains(@class,"travel-city ng-binding")]')
+    arr_loc = await page.xpath('//td/span[contains(@class,"travel-city transfer-city ng-binding")]')
     for t in time:
         time_txt = await page.evaluate('(element) => element.textContent', t)
         dep_times.append(time_txt)
@@ -65,11 +72,11 @@ async def get_info(origin, destination,date):
     for l in locations:
         loc_txt = await page.evaluate('(element) => element.textContent', l)
         locs.append(loc_txt)
-        locs[:] = [i for i in locs if i != '  ']
-    locs = locs[12:]
-    departure_locs = locs[::2]
-    arrival_locs = locs[1::2]
-
+        locs[:] = [i for i in locs if i != '']
+    departure_locs = locs[::3]
+    for a in arr_loc:
+        arr_loc_txt = await page.evaluate('(element) => element.textContent', a)
+        arrival_locs.append(arr_loc_txt)
     for n in departure_locs:
        dct['DepartureLoc'].append(n)
     for k in arrival_locs:

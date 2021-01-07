@@ -49,8 +49,8 @@ async def get_info(origin, destination,date):
             await page.evaluate('''(selector) => document.querySelector(selector).click()''', " #search > div > div:nth-child(3) > div > ul > li.selected")
         except Exception:
             logger.error('can not click the suggestion2')
-    await page.click('[id=onward_cal',{'clickCount': 1})
-    await page.click('[id=search_btn',{'clickCount': 1})
+    await page.click('[id=onward_cal]',{'clickCount': 1})
+    await page.click('[id=search_btn]',{'clickCount': 1})
 
     await asyncio.wait([page.waitForXPath('//div[contains(@class,"clearfix bus-item")]',{'visible': True, 'timeout': 50000})])
     dp_time = await page.xpath('//div[contains(@class,"dp-time")]')

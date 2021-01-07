@@ -58,7 +58,7 @@ async def get_info(origin, destination,date):
         price_txt = await page.evaluate('(element) => element.textContent', p)
         prices.append(price_txt)
         prices = [x.replace('\n', '') for x in prices]
-        prices = [x.strip('                  ') for x in prices]
+        prices = [x.strip('   ') for x in prices]
     del prices[0]
     print(prices)
 

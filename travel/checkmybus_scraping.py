@@ -43,14 +43,13 @@ async def get_info(origin, destination,date):
         await arrival_choice.click()
     except Exception:
         logger.info('Arrival City Is Not Valid')
-
     await page.waitForXPath('//*[@id="searchResults"]/div[1]/div/div/div',{'visible': True, 'timeout': 50000})
     await asyncio.wait([page.waitForXPath('//div/div/span[1][contains(@class,"pricePrefix")]',{'visible': True, 'timeout': 50000})])
     # await page.waitForXPath('//*[@id="searchResults"]/div[1]/div/div/div/div/div[3]/div/div[2]/div[2]',{'visible': True, 'timeout': 50000})
     time_departure = await page.xpath('//div[contains(@class,"time departure")]')
     time_arrival = await page.xpath('//div[contains(@class,"time arrival")]')
     locations = await page.xpath('//div/span[contains(@class,"station-name")]')
-    price = await page.xpath('/div[1]/div/div/div[2]/div/div[3]/div/div[2]/div[2]/span[2]')
+    price = await page.xpath('*//*[@id="searchResults"]/div[1]/div/div/div/div/div[3]/div/div[2]/div[1]/span[2]')
     for i in time_departure:
         dep_time_txt = await page.evaluate('(element) => element.textContent', i)
         dep_times.append(dep_time_txt)
@@ -73,5 +72,5 @@ async def get_info(origin, destination,date):
     print(prices)
 
 
-asyncio.get_event_loop().run_until_complete(get_info(' Hamburg, Deutschland', 'Berlin, Deutschland','25'))
+asyncio.get_event_loop().run_until_complete(get_info('Andorra la Vella, Andorra', 'Barcelona, Spain','25'))
 

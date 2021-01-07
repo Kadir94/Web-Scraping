@@ -64,8 +64,6 @@ async def get_info(orgin_city, dest_city, start_date, end_date):
         price_txt = await page.evaluate('(element) => element.textContent', i)
         prices.append(price_txt)
         prices = [x.replace('\n', '') for x in prices]
-
-
     departure = await page.xpath('//div[contains(@class,"location-departure")]')
     arrival = await page.xpath('//div[contains(@class,"location-arrival")]')
     date = await page.xpath('//*[contains(@class,"prominent-date")]')
