@@ -7,7 +7,7 @@ async def get_info(origin, destination,date):
 
     logger = logging.getLogger('Scrape App')
     logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('./scrape.log')
+    fh = logging.FileHandler('../scrape.log')
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
@@ -20,9 +20,10 @@ async def get_info(origin, destination,date):
     departure_locs = []
     arrival_time = []
     arrival_loc = []
+    prices = []
     browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
     page = await browser.newPage()
-    await page.goto('https://www.redbus.pe/', timeout=90000)
+    await page.goto('https://www.redbus.pe/en/', timeout=90000)
     await page.waitForXPath('//*[@id="src"]',{'visible': True, 'timeout': 50000})
     await page.click('[id=src]',{'clickCount': 1})
     await page.type('[id=src]', origin)
@@ -49,7 +50,16 @@ async def get_info(origin, destination,date):
             await page.evaluate('''(selector) => document.querySelector(selector).click()''', " #search > div > div:nth-child(3) > div > ul > li.selected")
         except Exception:
             logger.error('can not click the suggestion2')
+    await page.evaluate('''(selector) => document.querySelector(selector).removeAttribute("readonly")''', "#onward_cal")
     await page.click('[id=onward_cal]',{'clickCount': 1})
+    # await page.keyboard.press('Backspace')
+    await page.type('#onward_cal', date)
+    # await page.evaluate('''(selector) => document.querySelector(selector).setAttribute("readonly","readonly")''', "#onward_cal")
+    # await asyncio.sleep(1)
+    # await page.keyboard.press('Enter')
+    # //*[@id="onward_cal"]
+
+    # await page.click('[id=onward_cal]',{'clickCount': 1})
     await page.click('[id=search_btn]',{'clickCount': 1})
 
     await asyncio.wait([page.waitForXPath('//div[contains(@class,"clearfix bus-item")]',{'visible': True, 'timeout': 50000})])
@@ -57,6 +67,7 @@ async def get_info(origin, destination,date):
     dp_loc = await page.xpath('//div[contains(@class,"dp-loc")]')
     arr_time = await page.xpath('//div[contains(@class,"bp-time")]')
     arr_loc = await page.xpath('//div[contains(@class,"bp-loc")]')
+    price = await page.xpath('//div/div/span[contains(@class,"f-19 f-bold")]')
     for t in dp_time:
         dp_time_txt = await page.evaluate('(element) => element.textContent', t)
         departure_time.append(dp_time_txt)
@@ -73,5 +84,9 @@ async def get_info(origin, destination,date):
         arr_loc_txt = await page.evaluate('(element) => element.textContent', a)
         arrival_loc.append(arr_loc_txt)
     print(arrival_loc)
+    for p in price:
+        price_txt = await page.evaluate('(element) => element.textContent', p)
+        prices.append(price_txt)
+    print(prices)
 
-asyncio.get_event_loop().run_until_complete(get_info('Terminal Bagua, Bagua', 'Lima (Todos)','25'))
+asyncio.get_event_loop().run_until_complete(get_info('Trujillo (All Locations)', 'Lima (Todos)','19-Feb-2021'))

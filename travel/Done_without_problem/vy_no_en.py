@@ -7,7 +7,7 @@ async def get_info(origin, destination,time):
 
     logger = logging.getLogger('Scrape App')
     logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('./scrape.log')
+    fh = logging.FileHandler('../scrape.log')
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
@@ -37,14 +37,17 @@ async def get_info(origin, destination,time):
     await page.click('[id=timepicker--departure]',{'clickCount': 3})
     await page.keyboard.press('Backspace')
     await page.type('[id=timepicker--departure]', time)
+    await page.keyboard.press('Enter')
     await page.waitForXPath('//*[@id="new-travel-planner"]',{'visible': True, 'timeout': 50000})
     await page.xpath('//div[@id="new-travel-planner"]')
     try:
         await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#new-travel-planner > div._f2938568 > span._6cc748f6 > button")
     except Exception:
         logger.error('Can not find the Search Button')
-
-    await asyncio.wait([page.waitForXPath('//div/span[contains(@id,"center")]',{'visible': True, 'timeout': 90000})])
+    try:
+        await asyncio.wait([page.waitForXPath('//div/span[contains(@id,"center")]',{'visible': True, 'timeout': 50000})])
+    except Exception:
+        logger.error('Can not find the Travel Info')
     trip_tim = await page.xpath('//div/span[contains(@class,"_6a6a0e2b")]')
     price = await page.xpath('//div/button/span[contains(@class ,"_8c3d6635")]')
     trips = []
@@ -75,5 +78,5 @@ async def get_info(origin, destination,time):
     print(arrival_time)
 
 
-asyncio.get_event_loop().run_until_complete(get_info('Allkopi Parkveien', 'Fridtjof Nansens vei','19:00'))
+asyncio.get_event_loop().run_until_complete(get_info('Allkopi Parkveien', 'Fridtjof Nansens vei','15:00'))
 

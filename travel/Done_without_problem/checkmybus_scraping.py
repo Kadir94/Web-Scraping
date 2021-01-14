@@ -7,7 +7,7 @@ async def get_info(origin, destination,date):
 
     logger = logging.getLogger('Scrape App')
     logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('./scrape.log')
+    fh = logging.FileHandler('../scrape.log')
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
@@ -43,13 +43,20 @@ async def get_info(origin, destination,date):
         await arrival_choice.click()
     except Exception:
         logger.info('Arrival City Is Not Valid')
+    await page.waitForXPath('//*[@id="Date"]',{'visible': True, 'timeout': 50000})
+    await page.evaluate('''(selector) => document.querySelector(selector).removeAttribute("readonly")''', "#Date")
+    await page.click('[id=Date]',{'clickCount': 3})
+    await page.keyboard.press('Backspace')
+    await page.type('#Date', date)
+    await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#passengersfield")
+    await page.waitForXPath('//*[@id="execSearch"]',{'visible': True, 'timeout': 50000})
+    await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#execSearch")
     await page.waitForXPath('//*[@id="searchResults"]/div[1]/div/div/div',{'visible': True, 'timeout': 50000})
     await asyncio.wait([page.waitForXPath('//div/div/span[1][contains(@class,"pricePrefix")]',{'visible': True, 'timeout': 50000})])
-    # await page.waitForXPath('//*[@id="searchResults"]/div[1]/div/div/div/div/div[3]/div/div[2]/div[2]',{'visible': True, 'timeout': 50000})
     time_departure = await page.xpath('//div[contains(@class,"time departure")]')
     time_arrival = await page.xpath('//div[contains(@class,"time arrival")]')
     locations = await page.xpath('//div/span[contains(@class,"station-name")]')
-    price = await page.xpath('*//*[@id="searchResults"]/div[1]/div/div/div/div/div[3]/div/div[2]/div[1]/span[2]')
+    price = await page.xpath('//div/span[2]')
     for i in time_departure:
         dep_time_txt = await page.evaluate('(element) => element.textContent', i)
         dep_times.append(dep_time_txt)
@@ -68,9 +75,11 @@ async def get_info(origin, destination,date):
     for p in price:
         price_txt = await page.evaluate('(element) => element.textContent', p)
         prices.append(price_txt)
-    # prices = [int(word) for item in prices for word in item.split() if word.isdigit()]
+    prices = prices[26::3]
+    prices = [x.strip('\xa0') for x in prices]
     print(prices)
 
 
-asyncio.get_event_loop().run_until_complete(get_info('Andorra la Vella, Andorra', 'Barcelona, Spain','25'))
+asyncio.get_event_loop().run_until_complete(get_info('Andorra la Vella, Andorra', 'Barcelona, Spain','17.01.2021'))
+
 

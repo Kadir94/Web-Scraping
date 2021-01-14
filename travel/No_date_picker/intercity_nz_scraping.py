@@ -7,7 +7,7 @@ async def get_info(origin, destination,date):
 
     logger = logging.getLogger('Scrape App')
     logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('./scrape.log')
+    fh = logging.FileHandler('../scrape.log')
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
@@ -24,17 +24,22 @@ async def get_info(origin, destination,date):
     await page.goto('https://www.intercity.co.nz/', timeout=90000)
     await page.waitForXPath('//*[@id="BookTravelForm_getBookTravelForm_from"]',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', " #BookTravelForm_getBookTravelForm_from")
+    await asyncio.sleep(2)
     await page.type('[id=BookTravelForm_getBookTravelForm_from]', origin)
-
+    await page.keyboard.press('Enter')
+    await asyncio.sleep(1)
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', " #BookTravelForm_getBookTravelForm_to")
     await page.keyboard.press('Backspace')
     await page.type('[id=BookTravelForm_getBookTravelForm_to]', destination)
-    # await page.waitForXPath('//*[@id="BookTravelForm_getBookTravelForm"]/div/div[2]/div[1]/div[2]/div/ul',{'visible': True, 'timeout': 50000})
-    # await page.evaluate('''(selector) => document.querySelector(selector).click()''', "  #BookTravelForm_getBookTravelForm > div > div.booking-search-fields > div.row.location-picker.js-location-picker > div:nth-child(2) > div > ul > li")
     await page.keyboard.press('Enter')
-
     await page.waitForXPath('//*[@id="BookTravelForm_getBookTravelForm_date"]',{'visible': True, 'timeout': 50000})
-    await page.evaluate('''(selector) => document.querySelector(selector).click()''', "  #BookTravelForm_getBookTravelForm_date")
+    await page.evaluate('''(selector) => document.querySelector(selector).removeAttribute("readonly")''', "#BookTravelForm_getBookTravelForm_date")
+    await page.click('[id=BookTravelForm_getBookTravelForm_date]',{'clickCount': 3})
+    await page.keyboard.press('Backspace')
+    await page.type('#BookTravelForm_getBookTravelForm_date', date)
+    await page.keyboard.press('Enter')
+    await page.evaluate('''(selector) => document.querySelector(selector).setAttribute("readonly","readonly")''', "#BookTravelForm_getBookTravelForm_date")
+    # await page.evaluate('''(selector) => document.querySelector(selector).click()''', "  #BookTravelForm_getBookTravelForm_date")
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', " #BookTravelForm_getBookTravelForm_action_submit")
     await asyncio.wait([page.waitForXPath('//ul/li[contains(@class,"fare-item js-fare-item")]',{'visible': True, 'timeout': 90000})])
     await asyncio.wait([page.waitForXPath('//div[contains(@class,"summary-price")]',{'visible': True, 'timeout': 90000})])
@@ -61,4 +66,4 @@ async def get_info(origin, destination,date):
     prices = prices[1::2]
     print(prices)
 
-asyncio.get_event_loop().run_until_complete(get_info('Auckland - Central', 'Hamilton - Central','25'))
+asyncio.get_event_loop().run_until_complete(get_info('Auckland - Central', 'Hamilton - Central','Mon, 25 Jan 2021'))

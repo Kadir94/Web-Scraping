@@ -7,7 +7,7 @@ async def get_info(origin, destination,date):
 
     logger = logging.getLogger('Scrape App')
     logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('./scrape.log')
+    fh = logging.FileHandler('../scrape.log')
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
@@ -20,8 +20,6 @@ async def get_info(origin, destination,date):
     arrival_locs = []
     times = []
     prices = []
-    # departure_times = []
-    # arrival_times = []
     browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
     page = await browser.newPage()
     await page.goto('https://www.metroturizm.com.tr/en/', timeout=90000)
@@ -34,7 +32,13 @@ async def get_info(origin, destination,date):
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', " #Metro > div.row > div:nth-child(4) > div > div > button")
     await page.type('[id=Metro]', destination)
     await page.keyboard.press('Enter')
-    await page.click('[id=inpSearchJourneyBusBoardingDate]',{'clickCount': 1})
+    await page.waitForXPath('//*[@id="inpSearchJourneyBusBoardingDate"]',{'visible': True, 'timeout': 50000})
+    await page.evaluate('''(selector) => document.querySelector(selector).removeAttribute("readonly")''', "#inpSearchJourneyBusBoardingDate")
+    await page.click('[id=inpSearchJourneyBusBoardingDate]',{'clickCount': 3})
+    await page.keyboard.press('Backspace')
+    await page.type('#inpSearchJourneyBusBoardingDate', date)
+    await page.keyboard.press('Enter')
+    await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#btnIndexSearchJourneys")
     await page.waitForXPath('//div[contains(@class,"journey-item")]',{'visible': True, 'timeout': 90000})
     departure = await page.xpath('//div/span[contains(@class,"start ng-binding")]')
     arrival = await page.xpath('//div/span[contains(@class,"end ng-binding")]')
@@ -69,6 +73,6 @@ async def get_info(origin, destination,date):
     print(prices)
 
 
-asyncio.get_event_loop().run_until_complete(get_info('SAMSUN', 'ANKARA','25'))
+asyncio.get_event_loop().run_until_complete(get_info('SAMSUN', 'ANKARA','25.01.2021'))
 
 

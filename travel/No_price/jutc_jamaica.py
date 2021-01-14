@@ -8,7 +8,7 @@ async def get_info(origin, destination):
 
     logger = logging.getLogger('Scrape App')
     logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('./scrape.log')
+    fh = logging.FileHandler('../scrape.log')
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
@@ -20,6 +20,7 @@ async def get_info(origin, destination):
     browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
     cols = []
     rows = []
+    # dct = {' Route': [], 'Origin': [], 'Destination': [], 'Via': [], 'Depot': [], 'Route type': [], 'ARR.TIME': []}
     page = await browser.newPage()
     await page.goto('https://jutc.gov.jm/bus-routes/', timeout=90000)
     await page.waitForXPath('//*[@id="bus-route-filter"]/form/div/div[1]/select',{'visible': True, 'timeout': 50000})

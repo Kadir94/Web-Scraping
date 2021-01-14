@@ -7,7 +7,7 @@ async def get_info(origin, destination,date):
 
     logger = logging.getLogger('Scrape App')
     logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('./scrape.log')
+    fh = logging.FileHandler('../scrape.log')
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
@@ -18,6 +18,7 @@ async def get_info(origin, destination,date):
     logger.addHandler(ch)
     dep_times = []
     info = []
+    prices = []
     browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
     page = await browser.newPage()
     await page.goto('https://metickets.krc.co.ke/', timeout=90000)
@@ -45,8 +46,14 @@ async def get_info(origin, destination,date):
     await page.keyboard.press('Enter')
     await page.waitForXPath('//*[@id="content"]/div/div/div/div[1]/div/div',{'visible': True, 'timeout': 50000})
     await page.waitForXPath('//*[@id="car-details"]/div/div[1]/div[2]',{'visible': True, 'timeout': 50000})
+    await page.waitForXPath('//*[@id="adults"]',{'visible': True, 'timeout': 50000})
+    await page.click('[id=adults]',{'clickCount': 1})
+    await asyncio.sleep(2)
+    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('Enter')
     times = await page.xpath('//div/small/span[contains(@class,"span")]')
     locs = await page.xpath('//ul/li/a[contains(@href,"#")]')
+    price = await page.xpath('//span/span/span[contains(@class,"faretotal")]')
     for i in times:
         time_txt = await page.evaluate('(element) => element.textContent', i)
         dep_times.append(time_txt)
@@ -58,5 +65,8 @@ async def get_info(origin, destination,date):
         locs_txt = await page.evaluate('(element) => element.textContent', l)
         info.append(locs_txt)
     print(info)
-
-asyncio.get_event_loop().run_until_complete(get_info('Mombasa Terminus', 'Voi','01/08/2021'))
+    for p in price:
+        price_txt = await page.evaluate('(element) => element.textContent', p)
+        prices.append(price_txt)
+    print(prices)
+asyncio.get_event_loop().run_until_complete(get_info('Mombasa Terminus', 'Voi','01/15/2021'))

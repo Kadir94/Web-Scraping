@@ -6,7 +6,7 @@ import logging
 async def get_info(origin, destination,date):
     logger = logging.getLogger('Scrape App')
     logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('./scrape.log')
+    fh = logging.FileHandler('../scrape.log')
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
@@ -69,9 +69,11 @@ async def get_info(origin, destination,date):
         arr_time_txt = await page.evaluate('(element) => element.textContent', t)
         arrival_time.append(arr_time_txt)
     print(arrival_time)
+    string = "USD"
     for p in price:
         price_txt = await page.evaluate('(element) => element.textContent', p)
         prices.append(price_txt)
+    prices = ["{}{}".format(i,string) for i in prices]
     print(prices)
     await page.xpath('//td/span[contains(@class,"details")]')
     await page.click('[class=details]',{'clickCount': 1})

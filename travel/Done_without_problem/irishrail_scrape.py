@@ -6,7 +6,7 @@ import logging
 async def get_info(origin, destination,date):
     logger = logging.getLogger('Scrape App')
     logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('./scrape.log')
+    fh = logging.FileHandler('../scrape.log')
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
@@ -22,6 +22,9 @@ async def get_info(origin, destination,date):
     browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
     page = await browser.newPage()
     await page.goto('https://www.irishrail.ie/', timeout=90000)
+    await page.waitForXPath('//*[@id="CybotCookiebotDialogBody"]',{'visible': True, 'timeout': 50000})
+    await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#CybotCookiebotDialogBodyButtonAccept")
+    await asyncio.sleep(2)
     await page.waitForXPath('//*[@id="HFS_from"]',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#HFS_from")
     await page.type('[id=HFS_from]', origin)
@@ -49,9 +52,14 @@ async def get_info(origin, destination,date):
         try:
             await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#\30 ")
         except Exception:
-            print("lol")
             logger.error('can not click the suggestion2')
     await page.keyboard.press('Enter')
+    await page.evaluate('''(selector) => document.querySelector(selector).removeAttribute("readonly")''', "#HFS_date_REQ0")
+    await page.evaluate('''(selector) => document.querySelector(selector).removeAttribute("aria-haspopup")''', "#HFS_date_REQ0")
+    await page.click('[id=HFS_date_REQ0]',{'clickCount': 3})
+    await page.keyboard.press('Backspace')
+    await page.type('#HFS_date_REQ0', date)
+
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#HafasQueryForm > div.f02__cta > button")
     await asyncio.wait([page.waitForXPath('//div[contains(@class,"lyr_itemResults")]',{'visible': True, 'timeout': 50000})])
     dep_time = await page.xpath('//div/div[contains(@class,"lyr_timeRow lyr_plantime")]')
@@ -76,4 +84,4 @@ async def get_info(origin, destination,date):
         price.append(prices_txt)
     del price[-1]
     print(price)
-asyncio.get_event_loop().run_until_complete(get_info('Dublin Connolly', 'Limerick (Colbert)','25'))
+asyncio.get_event_loop().run_until_complete(get_info('Dublin Connolly', 'Limerick (Colbert)','25/01/2021'))

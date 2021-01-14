@@ -7,7 +7,7 @@ async def get_info(origin, destination,date):
 
     logger = logging.getLogger('Scrape App')
     logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('./scrape.log')
+    fh = logging.FileHandler('../scrape.log')
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
@@ -32,8 +32,13 @@ async def get_info(origin, destination,date):
     await page.waitForXPath('//*[@id="to-station"]',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#to-station")
     await page.type('[id=to-station]', destination)
-    await page.click('[id=switch-date-f]',{'clickCount': 1})
-
+    await page.waitForXPath('//*[@id="switch-date-f"]',{'visible': True, 'timeout': 50000})
+    await page.evaluate('''(selector) => document.querySelector(selector).removeAttribute("readonly")''', "#switch-date-f")
+    await page.click('[id=switch-date-f]',{'clickCount': 3})
+    await page.keyboard.press('Backspace')
+    await page.type('#switch-date-f', date)
+    await page.keyboard.press('Enter')
+    # await page.click('[id=switch-date-f]',{'clickCount': 1})
     await asyncio.wait([page.waitForXPath('//div[contains(@class,"row")]',{'visible': True, 'timeout': 50000})])
     dep_time = await page.xpath('//div/div[contains(@class,"col-3 col-time")]')
     arr_time = await page.xpath('//div/div[contains(@class,"col-4 col-time")]')
@@ -62,6 +67,6 @@ async def get_info(origin, destination,date):
     del prices[0]
     print(prices)
 
-asyncio.get_event_loop().run_until_complete(get_info('Rīga', 'Jelgava','25'))
+asyncio.get_event_loop().run_until_complete(get_info('Rīga', 'Jelgava','16.01.2021'))
 
 

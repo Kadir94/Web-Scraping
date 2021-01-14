@@ -7,7 +7,7 @@ async def get_info(origin, destination,date):
 
     logger = logging.getLogger('Scrape App')
     logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('./scrape.log')
+    fh = logging.FileHandler('../scrape.log')
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
@@ -89,5 +89,5 @@ async def get_info(origin, destination,date):
     new_price = [x.strip(' ') for x in new_price]
     print(new_price)
 
-asyncio.get_event_loop().run_until_complete(get_info('Chiang Mai', 'Pattaya','11/1/2021'))
+asyncio.get_event_loop().run_until_complete(get_info('Chiang Mai', 'Pattaya','20.Jan.2021'))
 

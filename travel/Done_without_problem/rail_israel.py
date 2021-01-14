@@ -3,11 +3,11 @@ import asyncio
 import logging
 
 
-async def get_info(origin, destination):
+async def get_info(origin, destination,date):
 
     logger = logging.getLogger('Scrape App')
     logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('./scrape.log')
+    fh = logging.FileHandler('../scrape.log')
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
@@ -51,7 +51,15 @@ async def get_info(origin, destination):
         try:
             await first_link_arr[0].click()
         except Exception:
-            logger.error('Did not work -> Arrival question')
+            logger.error('Did not work -> Date')
+    await page.waitForXPath('//*[@id="trainSearchMain"]/div/div/div/div[6]/fieldset/button',{'visible': True, 'timeout': 50000})
+    await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#trainSearchMain > div > div > div > div.col-md-2.col-sm-11.col-xs-10.dateTimeBox > fieldset > button")
+    await page.waitForXPath('//*[@id="elemId_15"]',{'visible': True, 'timeout': 50000})
+    await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#elemId_15")
+    await page.type('#elemId_15', date)
+    await asyncio.sleep(2)
+    await page.keyboard.press('Enter')
+    await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#trainSearchMain > div > div > div > div.col-md-2.col-sm-11.col-xs-10.dateTimeBox > fieldset > div > div.SboxTimePicker.col-md-6.col-sm-6.col-xs-12 > div.displayAndProceed > a")
     await page.waitForXPath('//*[@id="trainSearchMain"]/div/div/div/div[7]/button',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#trainSearchMain > div > div > div > div.col-md-2.col-sm-11.col-xs-10.searchBtnBox > button")
     await asyncio.wait([page.waitForXPath('//div[contains(@class,"hours ng-binding")]', timeout=90000)])
@@ -73,5 +81,5 @@ async def get_info(origin, destination):
     dep_loc = [x[23:] for x in dep_loc]
     print(dep_loc)
 
-asyncio.get_event_loop().run_until_complete(get_info('Tel Aviv-University', 'Tel Aviv-Savidor Center'))
+asyncio.get_event_loop().run_until_complete(get_info('Tel Aviv-University', 'Tel Aviv-Savidor Center','17/01/2021'))
 

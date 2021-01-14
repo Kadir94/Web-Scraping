@@ -6,7 +6,7 @@ import logging
 async def get_info(origin, destination,date):
     logger = logging.getLogger('Scrape App')
     logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('./scrape.log')
+    fh = logging.FileHandler('../scrape.log')
     fh.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.ERROR)
@@ -38,20 +38,14 @@ async def get_info(origin, destination,date):
         await page.keyboard.press('Enter')
     except Exception:
         logger.error('Invalid Destination City Name')
-    # await page.click('[id=travelDate]', {'clickCount': 1})
-    # await page.waitForXPath('//*[@class="calendar-table"]',{'visible': True, 'timeout': 50000})
-    # try:
-    #     month_changer = await page.waitForXPath('//*[@class="next available"]',{'visible': True, 'timeout': 50000})
-    # except Exception:
-    #     logger.error('Month changer was not found ...')
-    # right_window = None
-    # while True:
-    #     try:
-    #         right_window = await page.waitForXPath(".//*[@class='month'{int(date.split('/')[1])-1}']",{'visible': True, 'timeout': 50000})
-    #     except Exception:
-    #         pass
-    #     if right_window:
-    #         right_window.xpath('.//div[@class=calendar-time]')
+    await page.waitForXPath('//*[@id="travelDate"]',{'visible': True, 'timeout': 50000})
+    await page.evaluate('''(selector) => document.querySelector(selector).removeAttribute("readonly")''', "#travelDate")
+    await page.click('[id=travelDate]',{'clickCount': 3})
+    await page.keyboard.press('Backspace')
+    await page.type('#travelDate', date)
+    await page.waitForXPath('/html/body/div[2]/div/div[1]/div[1]/div[2]/div/div[4]/button',{'visible': True, 'timeout': 50000})
+    await page.evaluate('''(selector) => document.querySelector(selector).click()''',"body > div:nth-child(14) > div > div.container-fluid.ng-scope > div.row.main-block > div.col-12.glass > div > div.col-md-10.col-10.p-0.col-lg-2.col-xl-2.mt-2.mt-lg-0.mt-xl-0 > button")
+
     await asyncio.wait([page.waitForXPath('//tr/td[contains(@class,"date-time")]',{'visible': True, 'timeout': 90000})])
 
     time = await page.xpath('//tr/td[contains(@class,"date-time")]')
@@ -90,4 +84,4 @@ async def get_info(origin, destination,date):
 
     print(dct)
 
-asyncio.get_event_loop().run_until_complete(get_info('Odessa', 'Kyiv','25'))
+asyncio.get_event_loop().run_until_complete(get_info('Odessa', 'Kyiv','25/01/2021'))
