@@ -32,9 +32,24 @@ async def get_info(origin, destination,date):
     await asyncio.sleep(2)
     await page.waitForXPath('//*[@id="journey_route_parent"]/div[15]/aside/ul/li',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#journey_route_parent > div:nth-child(16) > aside > ul > li:nth-child(1)")
-    await page.waitForXPath('//*[@id="deal_finder1"]/div/section[2]',{'visible': True, 'timeout': 50000})
+
     await page.waitForXPath('//div/section[contains(@class,"journey_timing timing_outbound hide_until_times")]',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#deal_finder1 > div.deal_finder_wrap > section.journey_timing.timing_outbound.hide_until_times")
+    date_wanted = None
+    while True:
+        try:
+            date_wanted = await page.waitForXPath(f'//div[@data-full="{date}"]',timeout=1000)
+        except Exception:
+            logger.info('Cannot pick the date')
+        if date_wanted:
+            await date_wanted.click()
+            break
+        else:
+            try:
+                next_button = await page.waitForXPath('//div[@aria-label="Next Month"]')
+                await next_button.click()
+            except Exception:
+                logger.info('Cannot click the next month button')
     await page.waitForXPath('//*[@id="deal_finder1"]/div[2]/button',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#deal_finder1 > div.deal_finder_wrap > button")
     await page.waitForXPath('//*[@id="deal_finder1"]/div[2]/button',{'visible': True, 'timeout': 50000})
@@ -89,7 +104,7 @@ async def get_info(origin, destination,date):
     print(dct)
 
 
-asyncio.get_event_loop().run_until_complete(get_info('Calais ', '- Dover','11/1/2021'))
+asyncio.get_event_loop().run_until_complete(get_info('Calais ', '- Dover','2021-2-2'))
 
 
 
