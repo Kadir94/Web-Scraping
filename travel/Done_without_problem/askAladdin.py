@@ -16,11 +16,12 @@ async def get_info(origin,destination):
     ch.setFormatter(formatter)
     logger.addHandler(fh)
     logger.addHandler(ch)
-    col = []
+    info = []
     trip1 = None
     trip2 = None
     trip3 = None
     trip4 = None
+    dct = {'Company': [], 'Time Of Departure': [], 'Price': []}
     browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
     page = await browser.newPage()
     await page.goto('https://ask-aladdin.com/egypt-transport-system/bus-timetables/', timeout=200000)
@@ -63,9 +64,18 @@ async def get_info(origin,destination):
     chosen = await page.xpath('//div/div[@aria-expanded="true"]/div/div/div/table/tbody/tr/td')
     for i in chosen:
         name = await page.evaluate('(element) => element.textContent', i)
-        col.append(name)
-    print(col)
+        info.append(name)
+    company = info[3::3]
+    dep_time = info[4::3]
+    price = info[5::3]
+    for c in company:
+        dct['Company'].append(c)
+    for d in dep_time:
+        dct['Time Of Departure'].append(d)
+    for p in price:
+        dct['Price'].append(p)
+    print(dct)
 
 
-asyncio.get_event_loop().run_until_complete(get_info('Cairo', 'Oasis'))
+asyncio.get_event_loop().run_until_complete(get_info('Cairo', 'Alexandria'))
 
