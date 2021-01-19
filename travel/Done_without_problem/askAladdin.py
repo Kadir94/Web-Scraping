@@ -1,10 +1,6 @@
 from pyppeteer import launch
 import asyncio
 import logging
-import requests
-import lxml.html as lh
-import pandas as pd
-from bs4 import BeautifulSoup
 
 
 async def get_info(origin,destination):
