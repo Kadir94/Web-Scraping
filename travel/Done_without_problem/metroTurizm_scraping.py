@@ -24,9 +24,9 @@ async def get_info(origin, destination,date):
     page = await browser.newPage()
     await page.goto('https://www.metroturizm.com.tr/en/', timeout=90000)
 
-    await page.waitForXPath('//*[@id="Metro"]/div[1]/div[2]/div/div',{'visible': True, 'timeout': 50000})
+    await page.waitForXPath('//*[@id="Metro"]/div/div/div/div',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#Metro > div.row > div:nth-child(2) > div > div > button")
-    await page.waitForXPath('//*[@id="Metro"]/div[1]/div[2]/div/div/div',{'visible': True, 'timeout': 50000})
+    await page.waitForXPath('//*[@id="Metro"]/div/div/div/div/div',{'visible': True, 'timeout': 50000})
     await page.type('[id=Metro]', origin)
     await page.keyboard.press('Enter')
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', " #Metro > div.row > div:nth-child(4) > div > div > button")
@@ -74,5 +74,6 @@ async def get_info(origin, destination,date):
 
 
 asyncio.get_event_loop().run_until_complete(get_info('SAMSUN', 'ANKARA','25.01.2021'))
+
 
 

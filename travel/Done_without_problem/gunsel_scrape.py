@@ -43,8 +43,8 @@ async def get_info(origin, destination,date):
     await page.click('[id=travelDate]',{'clickCount': 3})
     await page.keyboard.press('Backspace')
     await page.type('#travelDate', date)
-    await page.waitForXPath('/html/body/div[2]/div/div[1]/div[1]/div[2]/div/div[4]/button',{'visible': True, 'timeout': 50000})
-    await page.evaluate('''(selector) => document.querySelector(selector).click()''',"body > div:nth-child(14) > div > div.container-fluid.ng-scope > div.row.main-block > div.col-12.glass > div > div.col-md-10.col-10.p-0.col-lg-2.col-xl-2.mt-2.mt-lg-0.mt-xl-0 > button")
+    await page.waitForXPath('/html/body/div/div/div/div/div/div/div/button[@translate="bus_search"]',{'visible': True, 'timeout': 50000})
+    await page.evaluate('''(selector) => document.querySelector(selector).click()''',"body > div:nth-child(11) > div > div.container-fluid.ng-scope > div.row.main-block > div.col-12.glass > div > div.col-md-10.col-10.p-0.col-lg-2.col-xl-2.mt-2.mt-lg-0.mt-xl-0 > button")
 
     await asyncio.wait([page.waitForXPath('//tr/td[contains(@class,"date-time")]',{'visible': True, 'timeout': 90000})])
 
@@ -85,3 +85,4 @@ async def get_info(origin, destination,date):
     print(dct)
 
 asyncio.get_event_loop().run_until_complete(get_info('Odessa', 'Kyiv','25/01/2021'))
+

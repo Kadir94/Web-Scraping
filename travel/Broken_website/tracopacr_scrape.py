@@ -22,7 +22,7 @@ async def get_info(origin, destination,date):
     await page.goto('https://www.tracopacr.com/Rutas_Horarios', timeout=90000)
     await page.waitForXPath('//*[@id="select2-input_origen-container"]',{'visible': True, 'timeout': 50000})
     await page.click('[id=select2-input_origen-container]',{'clickCount': 1})
-    await page.waitForXPath('//span/input[contains(@class,"select2-search__field")]',{'visible': True, 'timeout': 50000})
+    await page.waitForXPath('//span/span/input[contains(@class,"select2-search__field")]',{'visible': True, 'timeout': 50000})
     await page.type('body > span > span > span.select2-search.select2-search--dropdown > input', origin)
     suggestion_1 = None
     try:
@@ -35,10 +35,11 @@ async def get_info(origin, destination,date):
             await first_link_dep[0].click()
         except Exception:
                 logger.error('Did not work -> please write arrival')
-    await asyncio.sleep(2)
-    await page.waitForXPath('//*[@id="select2-input_destino-container"]',{'visible': True, 'timeout': 50000})
+
+    await page.waitForXPath('//span/span/span[@id="select2-input_destino-container"]',{'visible': True, 'timeout': 50000})
+    # await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#select2-input_destino-container")
     await page.click('[id=select2-input_destino-container]',{'clickCount': 1})
-    await page.waitForXPath('//span/input[contains(@class,"select2-search__field")]',{'visible': True, 'timeout': 50000})
+    await page.waitForXPath('//span/span/input[contains(@class,"select2-search__field")]',{'visible': True, 'timeout': 50000})
     await page.type('body > span > span > span.select2-search.select2-search--dropdown > input', destination)
     suggestion_2 = None
     try:
@@ -53,7 +54,7 @@ async def get_info(origin, destination,date):
             logger.error('Did not work -> please write date')
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#input_fecha")
     await page.type('#input_fecha', date)
-    await asyncio.sleep(3)
+
     await page.waitForXPath('//table[contains(@class,"datatable_horarios table table-striped table-bordered dataTable no-footer")]',{'visible': True, 'timeout': 50000})
     info = await page.xpath('//table/tbody/tr[contains(@role,"row")]')
     for i in info:
@@ -68,5 +69,5 @@ async def get_info(origin, destination,date):
     print(dep_loc)
     print(arr_loc)
 
-asyncio.get_event_loop().run_until_complete(get_info('SAN MATEO OROTINA', 'SELECCIONE UN LUGAR','18012021'))
+asyncio.get_event_loop().run_until_complete(get_info('SAN MATEO OROTINA', 'SELECCIONE UN LUGAR','25012021'))
 

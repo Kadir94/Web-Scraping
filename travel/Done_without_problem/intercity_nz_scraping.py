@@ -24,7 +24,7 @@ async def get_info(origin, destination,date):
     await page.goto('https://www.intercity.co.nz/', timeout=90000)
     await page.waitForXPath('//*[@id="BookTravelForm_getBookTravelForm_from"]',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', " #BookTravelForm_getBookTravelForm_from")
-    await asyncio.sleep(2)
+
     await page.type('[id=BookTravelForm_getBookTravelForm_from]', origin)
     await page.keyboard.press('Enter')
     await asyncio.sleep(1)

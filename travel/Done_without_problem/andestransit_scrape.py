@@ -28,7 +28,7 @@ async def get_info(origin, destination,date):
     await page.type('[id=search-origin-public]', origin)
     suggestion_1 = None
     try:
-        suggestion_1 = await page.waitForXPath('//html/body/div[4]/div[1][contains(@class,"autocomplete-suggestion")]',{'visible': True, 'timeout': 3000})
+        suggestion_1 = await page.waitForXPath('//html/body/div/div[contains(@class,"autocomplete-suggestion")]',{'visible': True, 'timeout': 3000})
     except Exception:
         logger.info('No Sugessions')
     if suggestion_1:
@@ -41,7 +41,7 @@ async def get_info(origin, destination,date):
     await page.type('[id=search-destination-public]', destination)
     suggestion_2 = None
     try:
-        suggestion_2 = await page.waitForXPath('//html/body/div[7]/div[1][contains(@class,"autocomplete-suggestion")]',{'visible': True, 'timeout': 3000})
+        suggestion_2 = await page.waitForXPath('//html/body/div/div[contains(@class,"autocomplete-suggestion")]',{'visible': True, 'timeout': 3000})
     except Exception:
         logger.info('No Sugessions')
     if suggestion_2:
@@ -96,5 +96,6 @@ async def get_info(origin, destination,date):
         location.append(locs_txt)
     print(location)
 asyncio.get_event_loop().run_until_complete(get_info('BOGOTA', 'Cali (Airport)','2021-02-22'))
+
 
 

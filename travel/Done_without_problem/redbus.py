@@ -32,14 +32,14 @@ async def get_info(origin, destination,date):
         suggestion_1 = await page.waitForXPath('//div/ul[contains(@class,"autoFill")]',{'visible': True, 'timeout': 50000})
     except Exception:
         logger.info('No suggestions1')
-    if suggestion_1:  #search > div > div.fl.search-box.clearfix > div > ul > li
+    if suggestion_1:
         try:
             choose = await suggestion_1.xpath('//*[@id="search"]/div/div[1]/div/ul/li')
             await choose[0].click()
         except Exception:
             logger.error('can not click the suggestion1')
     await page.waitForXPath('//*[@id="dest"]',{'visible': True, 'timeout': 50000})
-    await page.click('[id=dest',{'clickCount': 1})
+    await page.click('[id=dest]',{'clickCount': 1})
     await page.type('[id=dest]', destination)
     suggestion_2 = None
     try:
@@ -56,8 +56,7 @@ async def get_info(origin, destination,date):
     await page.waitForXPath('//*[@id="onward_cal"]',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#onward_cal")
     await page.waitForXPath('//*[@id="rb-calendar_onward_cal"]',{'visible': True, 'timeout': 50000})
-    # next_button = await page.waitForXPath('//tr/td[@class="next"]')
-    # await next_button.click()
+
     months = ['month','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
     day = date.split('.')[2]
     month = date.split('.')[1]
@@ -79,7 +78,7 @@ async def get_info(origin, destination,date):
             break
         else:
             try:
-                next_button = await page.waitForXPath('//*[@id="rb-calendar_onward_cal"]/table/tbody/tr[1]/td[3]/button',timeout=10000)
+                next_button = await page.waitForXPath('//*[@id="rb-calendar_onward_cal"]/table/tbody/tr[1]/td[3]/button',{'visible': True, 'timeout': 10000})
                 await next_button.click()
             except Exception:
                 print("lol3")
@@ -87,12 +86,9 @@ async def get_info(origin, destination,date):
     while True:
         try:
             day_wanted = await page.waitForXPath(f'//div/table/tbody/tr/td[@class="wd day" and contains(text(),"{day}")]',{'visible': True, 'timeout': 10000})
-            # day_wanted = await day_wanted.getProperty(f'"{day}"')
-            # await day_wanted.waitForXPath(f'//td[contains(text(),"{day}")]',timeout=10000)
         except Exception:
             print("lol")
         if day_wanted:
-            print(day_wanted)
             print('dayFound')
             await day_wanted.click()
             break
@@ -134,4 +130,5 @@ async def get_info(origin, destination,date):
     print(prices)
 
 asyncio.get_event_loop().run_until_complete(get_info('Trujillo (All Locations)', 'Lima (Todos)','2021.3.19'))
+
 

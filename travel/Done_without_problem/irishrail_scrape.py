@@ -24,7 +24,7 @@ async def get_info(origin, destination,date):
     await page.goto('https://www.irishrail.ie/', timeout=90000)
     await page.waitForXPath('//*[@id="CybotCookiebotDialogBody"]',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#CybotCookiebotDialogBodyButtonAccept")
-    await asyncio.sleep(2)
+
     await page.waitForXPath('//*[@id="HFS_from"]',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#HFS_from")
     await page.type('[id=HFS_from]', origin)

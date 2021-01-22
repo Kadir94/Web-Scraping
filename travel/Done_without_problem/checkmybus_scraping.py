@@ -20,6 +20,7 @@ async def get_info(origin, destination,date):
     dep_times = []
     locs = []
     prices = []
+    currency ='€'
     browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
     page = await browser.newPage()
     await page.goto('https://www.checkmybus.de/', timeout=90000)
@@ -30,7 +31,7 @@ async def get_info(origin, destination,date):
     await page.waitForXPath('//*[@id="origincityname"]',{'visible': True, 'timeout': 50000})
     await page.click('[id=origincityname]',{'clickCount': 1})
     await page.type('[id=origincityname]', origin)
-    departure_choice = await page.waitForXPath('//*[@id="searchform"]/fieldset/div[1]/div/div[3]',{'visible': True, 'timeout': 50000})
+    departure_choice = await page.waitForXPath('//*[@id="searchform"]/fieldset/div/div/div',{'visible': True, 'timeout': 50000})
     try:
         await departure_choice.click()
     except Exception:
@@ -38,7 +39,7 @@ async def get_info(origin, destination,date):
 
     await page.click('[id=destinationcityname]',{'clickCount': 1})
     await page.type('[id=destinationcityname]', destination)
-    arrival_choice = await page.waitForXPath('//*[@id="searchform"]/fieldset/div[2]/div/div[2]',{'visible': True, 'timeout': 50000})
+    arrival_choice = await page.waitForXPath('//*[@id="searchform"]/fieldset/div[2]/div/div',{'visible': True, 'timeout': 50000})
     try:
         await arrival_choice.click()
     except Exception:
@@ -51,12 +52,12 @@ async def get_info(origin, destination,date):
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#passengersfield")
     await page.waitForXPath('//*[@id="execSearch"]',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#execSearch")
-    await page.waitForXPath('//*[@id="searchResults"]/div[1]/div/div/div',{'visible': True, 'timeout': 50000})
-    await asyncio.wait([page.waitForXPath('//div/div/span[1][contains(@class,"pricePrefix")]',{'visible': True, 'timeout': 50000})])
+    await page.waitForXPath('//*[@id="searchResults"]/div/div/div/div',{'visible': True, 'timeout': 50000})
+    await asyncio.wait([page.waitForXPath('//div/div/span[contains(@class,"pricePrefix")]',{'visible': True, 'timeout': 50000})])
     time_departure = await page.xpath('//div[contains(@class,"time departure")]')
     time_arrival = await page.xpath('//div[contains(@class,"time arrival")]')
     locations = await page.xpath('//div/span[contains(@class,"station-name")]')
-    price = await page.xpath('//div/span[2]')
+    price = await page.xpath(f'//div/span[contains(text(),"{currency}")]')
     for i in time_departure:
         dep_time_txt = await page.evaluate('(element) => element.textContent', i)
         dep_times.append(dep_time_txt)
@@ -75,11 +76,12 @@ async def get_info(origin, destination,date):
     for p in price:
         price_txt = await page.evaluate('(element) => element.textContent', p)
         prices.append(price_txt)
-    prices = prices[26::3]
+    prices = prices[3:]
     prices = [x.strip('\xa0') for x in prices]
     print(prices)
 
 
-asyncio.get_event_loop().run_until_complete(get_info('Andorra la Vella, Andorra', 'Barcelona, Spain','17.01.2021'))
+asyncio.get_event_loop().run_until_complete(get_info('Andorra la Vella, Andorra', 'Barcelona, Spain','17.02.2021'))
+
 
 

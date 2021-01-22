@@ -19,10 +19,11 @@ async def get_info(origin, destination,date):
     dep_infos = []
     prices = []
     dct = {'Departure': [], 'Arrival': [], 'Dep_Time': [], 'Arr_Time': [], 'Price': []}
+    car = "A4 Avant (2008 +)"
     browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
     page = await browser.newPage()
     await page.goto('https://www.directferries.de/', timeout=90000)
-    await page.waitForXPath('//*[@id="deal_finder1"]/div[1]/section[1]/label[2]',{'visible': True, 'timeout': 50000})
+    await page.waitForXPath('//*[@id="deal_finder1"]/div/section/label',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#deal_finder1 > div.deal_finder_wrap > section.journey_type > label:nth-child(2)")
 
     await page.waitForXPath('//*[@id="route_outbound"]',{'visible': True, 'timeout': 50000})
@@ -30,7 +31,7 @@ async def get_info(origin, destination,date):
     await page.type('#route_outbound', origin)
     await page.type('#route_outbound', destination)
     await asyncio.sleep(2)
-    await page.waitForXPath('//*[@id="journey_route_parent"]/div[15]/aside/ul/li',{'visible': True, 'timeout': 50000})
+    await page.waitForXPath('//*[@id="journey_route_parent"]/div/aside/ul/li',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#journey_route_parent > div:nth-child(16) > aside > ul > li:nth-child(1)")
 
     await page.waitForXPath('//div/section[contains(@class,"journey_timing timing_outbound hide_until_times")]',{'visible': True, 'timeout': 50000})
@@ -50,29 +51,29 @@ async def get_info(origin, destination,date):
                 await next_button.click()
             except Exception:
                 logger.info('Cannot click the next month button')
-    await page.waitForXPath('//*[@id="deal_finder1"]/div[2]/button',{'visible': True, 'timeout': 50000})
+    await page.waitForXPath('//*[@id="deal_finder1"]/div/button',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#deal_finder1 > div.deal_finder_wrap > button")
-    await page.waitForXPath('//*[@id="deal_finder1"]/div[2]/button',{'visible': True, 'timeout': 50000})
+    await page.waitForXPath('//*[@id="deal_finder1"]/div/button',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#deal_finder1 > div.deal_finder_wrap > button")
-    await page.waitForXPath('//*[@id="deal_finder1"]/div[2]/section[4]/section[1]/ul[2]/li[3]/a',{'visible': True, 'timeout': 50000})
+    await page.waitForXPath('//*[@id="deal_finder1"]/div/section/section/ul/li/a',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#deal_finder1 > div.deal_finder_wrap > section.journey_info.hide_until_summary > section.trip_outbound.both_ways > ul:nth-child(4) > li:nth-child(3) > a")
     await page.waitForXPath('//div[@id="vehicle_base"]',{'visible': True, 'timeout': 50000})
-    await page.waitForXPath('//*[@id="vehicle_base"]/div[2]/label[3]',{'visible': True, 'timeout': 50000})
+    await page.waitForXPath('//*[@id="vehicle_base"]/div/label',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#vehicle_base > div.popup_body > label:nth-child(4)")
     car_choice = await page.waitForXPath('//div/fieldset/ol[contains(@class,"item_list vehicle_make")]',{'visible': True, 'timeout': 50000})
-    car_options = await car_choice.xpath("//*[@id='deal_finder1']/div[2]/aside/div/div[2]/fieldset/ol/li")
+    car_options = await car_choice.xpath("//*[@id='deal_finder1']/div/aside/div/div/fieldset/ol/li")
     await car_options[5].click()
 
     model_choice = await page.waitForXPath('//div/fieldset/ol[contains(@class,"item_list vehicle_model")]',{'visible': True, 'timeout': 50000})
-    model_options = await model_choice.xpath("//*[@id='deal_finder1']/div[2]/aside/div/div[2]/fieldset[2]/ol/li")
-    await model_options[20].click()
-    await page.waitForXPath('//*[@id="deal_finder1"]/div[2]/aside/footer/button',{'visible': True, 'timeout': 50000})
+    model_options = await model_choice.xpath(f"//*[@id='deal_finder1']/div/aside/div/div/fieldset/ol/li/label[contains(text(),'{car}')]")
+    await model_options[0].click()
+    await page.waitForXPath('//*[@id="deal_finder1"]/div/aside/footer/button',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#deal_finder1 > div.deal_finder_wrap > aside > footer > button")
-    await page.waitForXPath('//*[@id="deal_finder1"]/div[2]/button',{'visible': True, 'timeout': 50000})
+    await page.waitForXPath('//*[@id="deal_finder1"]/div/button',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#deal_finder1 > div.deal_finder_wrap > button")
 
-    await page.waitForXPath('//*[@id="divQuotesContainer"]/div[3]/div/div[1]/div[1]',{'visible': True, 'timeout': 50000})
-    await page.waitForXPath('//*[@id="divQuotesContainer"]/div[3]/div/div[1]/div[1]/div[2]',{'visible': True, 'timeout': 50000})
+    await page.waitForXPath('//*[@id="divQuotesContainer"]/div/div/div/div',{'visible': True, 'timeout': 50000})
+    await page.waitForXPath('//*[@id="divQuotesContainer"]/div/div/div/div/div',{'visible': True, 'timeout': 50000})
     dep_info = await page.xpath('//div/div[contains(@class,"ab-2062-col-1")]')
     price = await page.xpath('//div/div/b')
     for d in dep_info:
@@ -105,6 +106,7 @@ async def get_info(origin, destination,date):
 
 
 asyncio.get_event_loop().run_until_complete(get_info('Calais ', '- Dover','2021-2-2'))
+
 
 
 

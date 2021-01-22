@@ -38,7 +38,7 @@ async def get_info(origin, destination,date):
     await page.keyboard.press('Backspace')
     await page.type('#switch-date-f', date)
     await page.keyboard.press('Enter')
-    # await page.click('[id=switch-date-f]',{'clickCount': 1})
+
     await asyncio.wait([page.waitForXPath('//div[contains(@class,"row")]',{'visible': True, 'timeout': 50000})])
     dep_time = await page.xpath('//div/div[contains(@class,"col-3 col-time")]')
     arr_time = await page.xpath('//div/div[contains(@class,"col-4 col-time")]')

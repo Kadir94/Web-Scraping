@@ -20,38 +20,6 @@ async def get_info(origin, destination,date):
     arr_times = []
     locs = []
     prices = []
-    browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
-    page = await browser.newPage()
-    await page.goto('https://12go.asia/de', timeout=90000)
-    await page.waitForXPath('//*[@id="app"]/div[1]/header/div[4]/div/div[1]/div/div[1]/div[1]',{'visible': True, 'timeout': 50000})
-    await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#app > div.wrapper > header > div:nth-child(4) > div > div.vue-search-form-content > div > div.vue-search-form-group.places > div:nth-child(1) > div > div > div > div > div > div")
-    await page.waitForXPath('//*[@id="app"]/div[2]/div/div[2]/div/div[1]/div/input',{'visible': True, 'timeout': 50000})
-    await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#app > div.vue-portal-target > div > div.vue-modal > div > div.vue-modal-header > div > input")
-    await page.type('#app > div.vue-portal-target > div > div.vue-modal > div > div.vue-modal-header > div > input', origin)
-    await asyncio.sleep(3)
-    suggestion_1 = None
-    try:
-        suggestion_1 = await page.waitForXPath('//div[contains(@class,"vue-modal-body js-modal-window-body")]',{'visible': True, 'timeout': 50000})
-    except Exception:
-        logger.info('No Possible suggestion')
-    if suggestion_1:
-        first_link_dep = await suggestion_1.xpath(".//*[@class='vue-typeahead-suggestions popup']")
-        try:
-            await first_link_dep[0].click()
-        except Exception:
-                logger.error('Did not work -> please write arrival')
-    await page.type('#app > div.vue-portal-target > div > div.vue-modal > div > div.vue-modal-header > div > input', destination)
-    suggestion_2 = None
-    try:
-        suggestion_2 = await page.waitForXPath('//div[contains(@class,"vue-modal-body js-modal-window-body")]',{'visible': True, 'timeout': 50000})
-    except Exception:
-        logger.info('No Possible suggestion')
-    if suggestion_2:
-        first_link_arr = await suggestion_2.xpath(".//*[@class='vue-typeahead-suggestions popup']")
-        try:
-            await first_link_arr[0].click()
-        except Exception:
-            logger.error('Did not work -> please write date')
     months = ['month','Januar','Februar','März','April','Mai','Juni','juli','August','September','Oktober','November','Dezember']
     day = date.split('.')[2]
     month = date.split('.')[1]
@@ -59,21 +27,79 @@ async def get_info(origin, destination,date):
     print(month)
     print(year)
     print(day)
-    # calendar = await page.waitForXPath('//div/div[contains(@class,"vue-modal-body js-modal-window-body")]',{'visible': True, 'timeout': 50000})
-    # calendar_box = await page.waitForXPath('//div/div[contains(@class,"calendar-box")]',{'visible': True, 'timeout': 50000})
+    print(months[int(month)]+year)
+    browser = await launch({
+                            'args': [
+                            '--window-size=1280,1080',
+                                ]
+                            }, headless=False, autoClose=False, defaultViewport=None, width=1000, height=1200)
+    page = await browser.newPage()
+    await page.setViewport({'width': 1280, 'height': 1600})
+    # browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
+    # page = await browser.newPage()
+    await page.goto('https://12go.asia/de', timeout=90000)
+    await page.waitForXPath('//div/div/div[@class="vue-search-form-trips container vue-search-form-component"]',{'visible': True, 'timeout': 50000})
+    await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#app > div.wrapper > header > div:nth-child(4) > div > div.vue-search-form-content > div > div.vue-search-form-group.places > div:nth-child(1) > div > div > div > div > div > div")
+
+    # await page.click('[class=form-control prefield]', {'clickCount': 1})
+    await page.waitForXPath('//div/div/input[@class="form-control"]',{'visible': True, 'timeout': 50000})
+    await page.evaluate('''(selector) => document.querySelector(selector).click({'clickCount': 3})''',"#app > div.wrapper > header > div:nth-child(4) > div > div.vue-search-form-content > div > div.vue-search-form-group.places > div:nth-child(1) > div > div > div > div > div > div.vue-modal-wrapper.full-height > div > div > div.vue-modal-header > div > input")
+    await page.keyboard.press('Backspace')
+    await page.type('#app > div.wrapper > header > div:nth-child(4) > div > div.vue-search-form-content > div > div.vue-search-form-group.places > div:nth-child(1) > div > div > div > div > div > div.vue-modal-wrapper.full-height > div > div > div.vue-modal-header > div > input', origin)
+    # await page.keyboard.press('Enter')
+    # await page.waitForXPath('//div/div/input[@class="form-control"]',{'visible': True, 'timeout': 50000})
+    # await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#app > div.wrapper > header > div:nth-child(4) > div > div.vue-search-form-content > div > div.vue-search-form-group.places > div:nth-child(1) > div > div > div > div > div > div.vue-modal-wrapper.full-height > div > div > div.vue-modal-header > div > input")
+    # await page.type('#app > div.wrapper > header > div:nth-child(4) > div > div.vue-search-form-content > div > div.vue-search-form-group.places > div:nth-child(1) > div > div > div > div > div > div.vue-modal-wrapper.full-height > div > div > div.vue-modal-header > div > input', origin)
+    # await asyncio.sleep(1)
+    suggestion_1 = None
+    try:
+        suggestion_1 = await page.waitForXPath('//div/div/div[contains(@class,"vue-typeahead-suggestions popup")]',{'visible': True, 'timeout': 50000})
+    except Exception:
+        logger.info('No Possible suggestion')
+    if suggestion_1:
+        await asyncio.sleep(1)
+        first_link_dep = await suggestion_1.xpath('//div/div/div[contains(@class,"vue-typeahead-suggestions-item")]')
+        try:
+            await first_link_dep[0].click()
+        except Exception:
+                logger.error('Did not work -> please write arrival')
+    await page.type('#app > div.wrapper > header > div:nth-child(4) > div > div.vue-search-form-content > div > div.vue-search-form-group.places > div:nth-child(2) > div > div > div > div > div > div.vue-modal-wrapper.full-height > div > div > div.vue-modal-header > div > input', destination)
+    # await page.waitForXPath('//div/div[@class="form-control prefield"]',{'visible': True, 'timeout': 50000})
+    # await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#app > div.wrapper > header > div:nth-child(4) > div > div.vue-search-form-content > div > div.vue-search-form-group.places > div:nth-child(2) > div > div > div > div > div > div")
+    # await page.type('#app > div.wrapper > header > div:nth-child(4) > div > div.vue-search-form-content > div > div.vue-search-form-group.places > div:nth-child(2) > div > div > div > div > div > div.vue-modal-wrapper.full-height > div > div > div.vue-modal-header > div > input', destination)
+    suggestion_2 = None
+    try:
+        suggestion_2 = await page.waitForXPath('//div[contains(@class,"vue-typeahead-suggestions popup")]',{'visible': True, 'timeout': 50000})
+    except Exception:
+        logger.info('No Possible suggestion')
+    if suggestion_2:
+        await asyncio.sleep(1)
+        first_link_arr = await suggestion_2.xpath(".//*[@class='vue-typeahead-suggestions-item']")
+        try:
+            await first_link_arr[0].click()
+        except Exception:
+            logger.error('Did not work -> please write date')
+    # # date_input = await page.waitForXPath('//*[@id="form-datepicker"]/div[@class="vue-search-form-group-field"]',{'visible': True, 'timeout': 50000})
+    # # await date_input.click()
+
+
     month_wanted = None
     day_wanted = None
-    print(months[int(month)]+year)
-    # next_button = await page.waitForXPath('//div/button[@class="calendar-arrow-incr"]',timeout=5000)
+    await asyncio.sleep(2)
+    # next_button = await page.waitForXPath('//div/button[@class="calendar-arrow-incr"]',timeout=50000)
     # await next_button.click()
+    # wrapper = await page.waitForXPath('//div/div[@class="calendar-wrapper"]',timeout=50000)
     while True:
         try:
-            month_wanted = await page.waitForXPath(f'//div/span[contains(text(),"{months[int(month)]+" "+year}")]',timeout=5000)
+            month_wanted = await page.waitForXPath(f'//div/div/div/span[contains(text(),"{months[int(month)]+" "+year}")]',timeout=50000)
+            await asyncio.sleep(1)
+            # await next_button.click()
         except Exception:
             print('lol')
             # logger.info('Cannot pick the month')
         if month_wanted:
             print("month found")
+            # await next_button.click()
             break
         else:
             try:
@@ -83,11 +109,12 @@ async def get_info(origin, destination,date):
                 print("lol3")
     while True:
         try:
-            day_wanted = await page.waitForXPath(f'//td/div/span[contains(text(),"{day}")]',timeout=5000)
+            day_wanted = await page.waitForXPath(f'//tr/td/div/span[contains(text(),"{day}")]',timeout=50000)
         except Exception:
             print("lol4")
         if day_wanted:
             print("day found")
+            await asyncio.sleep(2)
             await day_wanted.click()
             break
         else:
@@ -97,7 +124,7 @@ async def get_info(origin, destination,date):
             except Exception:
                 print("lol5")
                 # logger.info('Cannot click the next month button')
-    await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#app > div.vue-portal-target > div > div.vue-modal > div > div.vue-modal-footer > div > div.vue-field-datepicker-buttons > button.btn.btn-primary.btn-lg")
+    # await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#app > div.vue-portal-target > div > div.vue-modal > div > div.vue-modal-footer > div > div.vue-field-datepicker-buttons > button.btn.btn-primary.btn-lg")
     # await page.waitForXPath('//div/div/div[contains(@class,"vue-modal-footer")]',{'visible': True, 'timeout': 50000})
     # await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#app > div.vue-portal-target > div > div.vue-modal > div > div.vue-modal-footer > button")
     # await page.waitForXPath('//div/div[contains(@class,"vue-search-form-group action")]',{'visible': True, 'timeout': 50000})
