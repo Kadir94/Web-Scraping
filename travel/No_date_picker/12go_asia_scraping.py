@@ -89,33 +89,31 @@ async def get_info(origin, destination,date):
     # next_button = await page.waitForXPath('//div/button[@class="calendar-arrow-incr"]',timeout=50000)
     # await next_button.click()
     # wrapper = await page.waitForXPath('//div/div[@class="calendar-wrapper"]',timeout=50000)
+    calendar = await page.waitForXPath('//div/div[@class="vue-modal-body js-modal-window-body"]',{'visible': True, 'timeout': 50000})
     while True:
         try:
-            month_wanted = await page.waitForXPath(f'//div/div/div/span[contains(text(),"{months[int(month)]+" "+year}")]',timeout=50000)
-            await asyncio.sleep(1)
-            # await next_button.click()
+            month_wanted = await calendar.waitForXPath(f'//div/div/div/div/span[contains(text(),"{months[int(month)]+" "+year}")]',{'visible': True, 'timeout': 50000})
         except Exception:
             print('lol')
             # logger.info('Cannot pick the month')
         if month_wanted:
             print("month found")
-            # await next_button.click()
             break
         else:
             try:
-                next_button = await page.waitForXPath('//div/button[@class="calendar-arrow-incr"]')
+                next_button = await page.waitForXPath('//div/div/button[@class="calendar-arrow-incr"]',{'visible': True, 'timeout': 50000})
                 await next_button.click()
             except Exception:
                 print("lol3")
     while True:
         try:
-            day_wanted = await page.waitForXPath(f'//tr/td/div/span[contains(text(),"{day}")]',timeout=50000)
+            day_wanted = await calendar.xpath(f'//div/div/table/tbody/tr/td/div/span[contains(text(),"{day}")]')
         except Exception:
             print("lol4")
         if day_wanted:
             print("day found")
             await asyncio.sleep(2)
-            await day_wanted.click()
+            await day_wanted[0].click()
             break
         else:
             try:

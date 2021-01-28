@@ -1,24 +1,17 @@
 from pyppeteer import launch
 import asyncio
 import logging
+import datetime
 
 
-async def get_info(origin, destination,date):
+async def get_info(origin, destination,date,logger):
 
-    logger = logging.getLogger('Scrape App')
-    logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('../scrape.log')
-    fh.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.ERROR)
-    formatter = logging.Formatter('%(asctime)s-%(name)s-%(levelname)s,%(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
-    logger.addHandler(fh)
-    logger.addHandler(ch)
     dep_times = []
     info = []
     prices = []
+    date = date.strftime('%m/%d/%Y')
+    dict = []
+
     browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
     page = await browser.newPage()
     await page.goto('https://metickets.krc.co.ke/', timeout=90000)
@@ -52,22 +45,24 @@ async def get_info(origin, destination,date):
     await page.keyboard.press('ArrowDown')
     await page.keyboard.press('Enter')
     times = await page.xpath('//div/small/span[contains(@class,"span")]')
-    locs = await page.xpath('//ul/li/a[contains(@href,"#")]')
     price = await page.xpath('//span/span/span[contains(@class,"faretotal")]')
     for i in times:
         time_txt = await page.evaluate('(element) => element.textContent', i)
         dep_times.append(time_txt)
     departure_times = dep_times[::2]
     arrival_times = dep_times[1::1]
-    print(departure_times)
-    print(arrival_times)
-    for l in locs:
-        locs_txt = await page.evaluate('(element) => element.textContent', l)
-        info.append(locs_txt)
-    print(info)
     for p in price:
         price_txt = await page.evaluate('(element) => element.textContent', p)
         prices.append(price_txt)
-    print(prices)
-asyncio.get_event_loop().run_until_complete(get_info('Mombasa Terminus', 'Voi','02/15/2021'))
+    for d, a, p in zip(departure_times,arrival_times, prices):
+         dict.append({
+            'Origin': origin,
+            'Destanation': destination,
+            'Date': date,
+            'DepartureTime': d,
+            'ArrivalTime': a,
+            'Price': p
+         })
+    print(dict)
+asyncio.get_event_loop().run_until_complete(get_info('Mombasa Terminus', 'Voi',datetime.date.today(),logger=None))
 

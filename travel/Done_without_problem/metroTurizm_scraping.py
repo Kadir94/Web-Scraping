@@ -1,25 +1,15 @@
 from pyppeteer import launch
 import asyncio
 import logging
+import datetime
 
 
-async def get_info(origin, destination,date):
+async def get_info(origin, destination,date,logger):
 
-    logger = logging.getLogger('Scrape App')
-    logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('../scrape.log')
-    fh.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.ERROR)
-    formatter = logging.Formatter('%(asctime)s-%(name)s-%(levelname)s,%(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
-    logger.addHandler(fh)
-    logger.addHandler(ch)
-    departure_locs = []
-    arrival_locs = []
     times = []
     prices = []
+    date = date.strftime('%d.%m.%Y')
+    dict = []
     browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
     page = await browser.newPage()
     await page.goto('https://www.metroturizm.com.tr/en/', timeout=90000)
@@ -40,22 +30,8 @@ async def get_info(origin, destination,date):
     await page.keyboard.press('Enter')
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#btnIndexSearchJourneys")
     await page.waitForXPath('//div[contains(@class,"journey-item")]',{'visible': True, 'timeout': 90000})
-    departure = await page.xpath('//div/span[contains(@class,"start ng-binding")]')
-    arrival = await page.xpath('//div/span[contains(@class,"end ng-binding")]')
     time = await page.xpath('//div/span[contains(@class,"journey-item-hour ng-binding")]')
     price = await page.xpath('//div/span[contains(@class,"price ng-binding")]')
-    for i in departure:
-        departure_txt = await page.evaluate('(element) => element.textContent', i)
-        departure_locs.append(departure_txt)
-        departure_locs = [x.replace('\n', '') for x in departure_locs]
-        departure_locs = [x.strip('                  ') for x in departure_locs]
-    print(departure_locs)
-    for a in arrival:
-        arrival_txt = await page.evaluate('(element) => element.textContent', a)
-        arrival_locs.append(arrival_txt)
-        arrival_locs = [x.replace('\n', '') for x in arrival_locs]
-        arrival_locs= [x.strip('                  ') for x in arrival_locs]
-    print(arrival_locs)
     for t in time:
         time_txt = await page.evaluate('(element) => element.textContent', t)
         times.append(time_txt)
@@ -71,9 +47,18 @@ async def get_info(origin, destination,date):
         prices.append(price_txt)
     prices = ["{}{}".format(i,string) for i in prices]
     print(prices)
+    for d, a, p in zip(departure_times,arrival_times, prices):
+         dict.append({
+            'Origin': origin,
+            'Destanation': destination,
+            'Date': date,
+            'DepartureTime': d,
+            'ArrivalTime': a,
+            'Price': p
+         })
+    print(dict)
 
-
-asyncio.get_event_loop().run_until_complete(get_info('SAMSUN', 'ANKARA','25.01.2021'))
+asyncio.get_event_loop().run_until_complete(get_info('SAMSUN', 'ANKARA',datetime.datetime.today(),logger=None))
 
 
 

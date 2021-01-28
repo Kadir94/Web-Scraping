@@ -1,24 +1,16 @@
 from pyppeteer import launch
 import asyncio
 import logging
+import datetime
 
 
-async def get_info(origin, destination,date):
-
-    logger = logging.getLogger('Scrape App')
-    logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('../scrape.log')
-    fh.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.ERROR)
-    formatter = logging.Formatter('%(asctime)s-%(name)s-%(levelname)s,%(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
-    logger.addHandler(fh)
-    logger.addHandler(ch)
+async def get_info(origin, destination,date,logger):
 
     departure_time = []
     prices = []
+    dict = []
+
+    date = date.strftime('%Y.%#m.%#d')
     browser = await launch(headless=False, autoClose=False, width=2400, height=2400)
     page = await browser.newPage()
     await page.goto('https://www.intercity.co.nz/', timeout=90000)
@@ -35,13 +27,15 @@ async def get_info(origin, destination,date):
     try:
         choice = await page.waitForXPath('//div/ul[@class="autocomplete-list"]', {'visible': True, 'timeout': 7000})
     except Exception:
-        logger.info('No Possible questions')
+        # logger.info('No Possible questions')
+        print('No Possible questions')
     if choice:
         first_link_dep = await choice.xpath("//div/ul/li[@class='autocomplete-suggestion']")
         try:
             await first_link_dep[0].click()
         except Exception:
-            logger.error('Did not work -> Date')
+            # logger.error('Did not work -> Date')
+            print('Did not work -> Date')
     await page.waitForXPath('//*[@id="BookTravelForm_getBookTravelForm_date"]',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#BookTravelForm_getBookTravelForm_date")
     await page.waitForXPath('//div/div[contains(@class,"month-wrapper")]',{'visible': True, 'timeout': 50000})
@@ -49,14 +43,10 @@ async def get_info(origin, destination,date):
     day = date.split('.')[2]
     month = date.split('.')[1]
     year = date.split('.')[0]
-    print(month)
-    print(year)
-    print(day)
     month_wanted = None
     day_wanted = None
-    print(months[int(month)]+year)
-    next_button = await page.waitForXPath('//th/span[@class="next"]')
-    await next_button.click()
+    # next_button = await page.waitForXPath('//th/span[@class="next"]',{'visible': True, 'timeout': 9000})
+    # await next_button.click()
     while True:
         try:
             month_wanted = await page.waitForXPath(f'//div/table/thead/tr/th[contains(text(),"{months[int(month)]+" "+year}")]',timeout=1000)
@@ -75,7 +65,7 @@ async def get_info(origin, destination,date):
                 # logger.info('Cannot click the next month button')
     while True:
         try:
-            day_wanted = await page.waitForXPath(f'//table/tbody/tr/td/div[contains(text(),"{day}")]',timeout=1000)
+            day_wanted = await page.waitForXPath(f'//table/tbody/tr/td/div[contains(text(),"{day}")]',{'visible': True, 'timeout': 7000})
         except Exception:
             print("lol")
         if day_wanted:
@@ -87,14 +77,13 @@ async def get_info(origin, destination,date):
                 await next_button.click()
             except Exception:
                 print("lol3")
-                logger.info('Cannot click the next month button')
+                # logger.info('Cannot click the next month button')
+                print('Cannot click the next month button')
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', " #BookTravelForm_getBookTravelForm_action_submit")
     await asyncio.wait([page.waitForXPath('//ul/li[contains(@class,"fare-item js-fare-item")]',{'visible': True, 'timeout': 90000})])
     await asyncio.wait([page.waitForXPath('//div[contains(@class,"summary-price")]',{'visible': True, 'timeout': 90000})])
-
     dep_time = await page.xpath('//div/div[contains(@class,"fare-time")]')
     price = await page.xpath('//div/div[contains(@class,"price")]')
-
     for i in dep_time:
         dp_time_txt = await page.evaluate('(element) => element.textContent', i)
         departure_time.append(dp_time_txt)
@@ -114,6 +103,15 @@ async def get_info(origin, destination,date):
         prices = [s.strip() for s in prices]
     prices = prices[::2]
     prices = prices[1::2]
-    print(prices)
+    for d, a, p in zip(departure_tim, arrival_tim, prices):
+         dict.append({
+            'Origin': origin,
+            'Destanation': destination,
+            'Date': date,
+            'DepartureTime': d,
+            'ArrivalTime': a,
+            'Price': p
+         })
+    print(dict)
 
-asyncio.get_event_loop().run_until_complete(get_info('Auckland - Central', 'Hamilton - Central','2021.4.22'))
+asyncio.get_event_loop().run_until_complete(get_info('Auckland - Central', 'Hamilton - Central',datetime.datetime.today(),logger=None))

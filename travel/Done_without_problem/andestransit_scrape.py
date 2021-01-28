@@ -1,25 +1,13 @@
 from pyppeteer import launch
 import asyncio
 import logging
+import datetime
 
 
-async def get_info(origin, destination,date):
-    logger = logging.getLogger('Scrape App')
-    logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('../scrape.log')
-    fh.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.ERROR)
-    formatter = logging.Formatter('%(asctime)s-%(name)s-%(levelname)s,%(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
-    logger.addHandler(fh)
-    logger.addHandler(ch)
+async def get_info(origin, destination,date,logger):
 
-    departure_time = []
-    arrival_time = []
-    prices = []
-    location = []
+    dict = []
+    date = date.strftime('%Y-%m-%d')
     browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
     page = await browser.newPage()
     await page.goto('https://andestransit.com/', timeout=90000)
@@ -48,9 +36,10 @@ async def get_info(origin, destination,date):
         try:
             await page.evaluate('''(selector) => document.querySelector(selector).click()''', "body > div:nth-child(17) > div:nth-child(1)")
         except Exception:
-             logger.info('Couldn not find Suggestion')
-    submit_button = await page.waitForXPath('//div/input[@name="submitBtn"]',visible=True, timeout=50000)
-    await submit_button.click()
+            logger.info('Couldn not find Suggestion')
+
+    await page.waitForXPath('//div/input[@name="submitBtn"]',visible=True, timeout=50000)
+    await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#searchForm-public > div:nth-child(3) > input")
     await page.waitForXPath('//section/div[@id="calendar"]',visible=True, timeout=50000)
     date_wanted = None
     while True:
@@ -73,29 +62,22 @@ async def get_info(origin, destination,date):
     dep_time = await page.xpath('//tr/td/span[contains(@data-bind,"text: $data.DepartureTime")]')
     arr_time = await page.xpath('//tr/td/span[contains(@data-bind,"text: $data.ArrivalTime")]')
     price = await page.xpath('//td/a/span[contains(@data-bind,"text : $data.TotalPrevPrice()")]')
-
-    for t in dep_time:
-        dep_time_txt = await page.evaluate('(element) => element.textContent', t)
-        departure_time.append(dep_time_txt)
-    print(departure_time)
-    for t in arr_time:
-        arr_time_txt = await page.evaluate('(element) => element.textContent', t)
-        arrival_time.append(arr_time_txt)
-    print(arrival_time)
-    string = "USD"
-    for p in price:
+    for (d,a,p) in zip(dep_time,arr_time,price):
+        dep_time_txt = await page.evaluate('(element) => element.textContent', d)
+        arr_time_txt = await page.evaluate('(element) => element.textContent', a)
         price_txt = await page.evaluate('(element) => element.textContent', p)
-        prices.append(price_txt)
-    prices = ["{}{}".format(i,string) for i in prices]
-    print(prices)
-    await page.xpath('//td/span[contains(@class,"details")]')
-    await page.click('[class=details]',{'clickCount': 1})
-    locs = await page.xpath('//tr/td[contains(@data-bind,"text: $data.ServiceName")]')
-    for l in locs:
-        locs_txt = await page.evaluate('(element) => element.textContent', l)
-        location.append(locs_txt)
-    print(location)
-asyncio.get_event_loop().run_until_complete(get_info('BOGOTA', 'Cali (Airport)','2021-02-22'))
+        dict.append({
+            'Origin': origin,
+            'Destanation': destination,
+            'Date': date,
+            'DepartureTime': dep_time_txt,
+            'ArrivalTime': arr_time_txt,
+            'Price': price_txt.strip()+" USD"
+        })
+
+    return dict
+
+asyncio.get_event_loop().run_until_complete(get_info('BOGOTA', 'Cali (Airport)',datetime.datetime.today(),logger=None))
 
 
 

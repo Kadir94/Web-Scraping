@@ -3,25 +3,14 @@ import asyncio
 import logging
 
 
-async def get_info(origin,destination):
+async def get_info(origin,destination,date,logger):
 
-    logger = logging.getLogger('Scrape App')
-    logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('../scrape.log')
-    fh.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.ERROR)
-    formatter = logging.Formatter('%(asctime)s-%(name)s-%(levelname)s,%(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
-    logger.addHandler(fh)
-    logger.addHandler(ch)
     info = []
     trip1 = None
     trip2 = None
     trip3 = None
     trip4 = None
-    dct = {'Company': [], 'Time Of Departure': [], 'Price': []}
+    dict = []
     browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
     page = await browser.newPage()
     await page.goto('https://ask-aladdin.com/egypt-transport-system/bus-timetables/', timeout=200000)
@@ -68,14 +57,17 @@ async def get_info(origin,destination):
     company = info[3::3]
     dep_time = info[4::3]
     price = info[5::3]
-    for c in company:
-        dct['Company'].append(c)
-    for d in dep_time:
-        dct['Time Of Departure'].append(d)
-    for p in price:
-        dct['Price'].append(p)
-    print(dct)
+    for (c,d,p) in zip(company,dep_time,price):
+         dict.append({
+            'Origin': origin,
+            'Destanation': destination,
+            'Date': date,
+            'DepartureTime': d,
+            'ArrivalTime': None,
+            'Price': p
+        })
 
+    print(dict)
 
-asyncio.get_event_loop().run_until_complete(get_info('Cairo', 'Alexandria'))
+asyncio.get_event_loop().run_until_complete(get_info('Cairo', 'Alexandria',date=None,logger=None))
 
