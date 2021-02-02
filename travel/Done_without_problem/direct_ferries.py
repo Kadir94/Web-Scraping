@@ -2,17 +2,17 @@ from pyppeteer import launch
 import asyncio
 import logging
 import datetime
+import time
+import sys
 
 
-async def get_info(origin, destination,date,logger):
+async def get_info(page,country_id,origin,origin_id, destination,destination_id,total_size,hash_id,order,date,logger):
 
     dep_infos = []
     prices = []
-    dict = []
+    list_dict = []
     car = "A4 Avant (2008 +)"
     date = date.strftime('%Y-%#m-%#d')
-    browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
-    page = await browser.newPage()
     await page.goto('https://www.directferries.de/', timeout=90000)
     await page.waitForXPath('//*[@id="deal_finder1"]/div/section/label',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#deal_finder1 > div.deal_finder_wrap > section.journey_type > label:nth-child(2)")
@@ -32,8 +32,7 @@ async def get_info(origin, destination,date,logger):
         try:
             date_wanted = await page.waitForXPath(f'//div[@data-full="{date}"]',timeout=1000)
         except Exception:
-            # logger.info('Cannot pick the date')
-            print('Cannot pick the date')
+            logger.info('Cannot pick the date')
         if date_wanted:
             await date_wanted.click()
             break
@@ -42,8 +41,7 @@ async def get_info(origin, destination,date,logger):
                 next_button = await page.waitForXPath('//div[@aria-label="Next Month"]')
                 await next_button.click()
             except Exception:
-                # logger.info('Cannot click the next month button')
-                print('Cannot click the next month button')
+                logger.info('Cannot click the next month button')
     await page.waitForXPath('//*[@id="deal_finder1"]/div/button',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#deal_finder1 > div.deal_finder_wrap > button")
     await page.waitForXPath('//*[@id="deal_finder1"]/div/button',{'visible': True, 'timeout': 50000})
@@ -77,7 +75,7 @@ async def get_info(origin, destination,date,logger):
         dep_infos = [x.replace('\n', '') for x in dep_infos]
         dep_infos = [x.strip('                                                                        ') for x in dep_infos]
     del dep_infos[1::3]
-
+    times = [x[75:90] for x in dep_infos]
     dep_time = times[0::2]
     arr_time = times[1::2]
     for p in price:
@@ -85,15 +83,23 @@ async def get_info(origin, destination,date,logger):
         prices.append(price_txt)
     prices = prices[7::5]
     for d, a, p in zip(dep_time, arr_time, prices):
-         dict.append({
-            'Origin': origin,
-            'Destanation': destination.strip('-'),
+        list_dict.append({
+            'country_id': country_id,
+            'origin_id': origin_id,
+            'destination_id': destination_id,
             'Date': date,
             'DepartureTime': d.strip('       '),
             'ArrivalTime': a.strip('        '),
             'Price': p
-         })
-    print(dict)
+        })
+    total_data = {
+        'data': list_dict,
+        'total_size': total_size,
+        'order': order,
+        'hash_id': hash_id,
+    }
+    return total_data
+
 
 
 asyncio.get_event_loop().run_until_complete(get_info('Calais ', '- Dover',datetime.datetime.today(),logger=None))

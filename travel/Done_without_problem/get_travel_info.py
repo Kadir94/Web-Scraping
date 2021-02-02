@@ -2,51 +2,48 @@ from pyppeteer import launch
 import asyncio
 import logging
 import datetime
+import time
+import sys
 
 
-async def get_info(orgin_city, dest_city, start_date,logger):
+async def get_info(page,country_id,origin,origin_id, destination,destination_id,total_size,hash_id,order,date,logger):
     prices = []
     dep_info = []
     arr_times = []
-    dict = []
-    start_date = start_date.strftime('%d.%m.%Y')
-    browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
-    page = await browser.newPage()
+    list_dict = []
+    date = date.strftime('%d.%m.%Y')
     await page.goto('https://www.fluege.de/', timeout=50000)
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#flightForm > div.flight-type-wrapper > div.js_flight-type.flight-type.oneway > label")
-    await page.type('[id=f0-dep-location-]', orgin_city)
-    await page.type('[id=f0-arr-location-]', dest_city)
+    await page.type('[id=f0-dep-location-]', origin)
+    await page.type('[id=f0-arr-location-]', destination)
     await page.click('[id=f0Date]', {'clickCount': 3})
     await page.keyboard.press('Backspace')
-    await page.type('[id=f0Date]', start_date)
+    await page.type('[id=f0Date]', date)
     await page.keyboard.press('Enter')
     question_1 = None
     try:
         question_1 = await page.waitForXPath("//*[@id='f0DepSection']", {'visible': True, 'timeout': 7000})
     except Exception:
-        # logger.info('No Possible questions')
-        print('No Possible questions')
+        logger.info('No Possible questions')
+
     if question_1:
         first_link_dep = await question_1.xpath(".//*[@class='js_select-airport']")
         try:
             await first_link_dep[0].click()
         except Exception:
-            # logger.error('Did not work -> Departure question')
-            print('Did not work -> Departure question')
+            logger.error('Did not work -> Departure question')
     question_2 = None
     try:
         question_2 = await page.waitForXPath('//*[@id="f0ArrSection"]', {'visible': True, 'timeout': 7000})
     except Exception:
-        # logger.info('No Possible Questions')
-        print('No Possible Questions')
+        logger.info('No Possible Questions')
+
     if question_2:
         first_link_arr = await question_2.xpath('.//*[@class="js_select-airport"]')
         try:
             await first_link_arr[0].click()
         except Exception:
-            # logger.error('Did not work -> Arrival question')
-            print('Did not work -> Arrival question')
-
+            logger.error('Did not work -> Arrival question')
     await asyncio.wait([page.waitForXPath('//div[contains(@class,"column-price-flag")]', timeout=90000)])
     await asyncio.wait([page.waitForXPath('//div/span[contains(@class,"city highlight")]', timeout=90000)])
 
@@ -69,14 +66,22 @@ async def get_info(orgin_city, dest_city, start_date,logger):
 
     new_arr_tim = [x[0:5] for x in arr_times]
     for d,a,p in zip(new_dep_tim,new_arr_tim,prices):
-        dict.append({
-            'Origin': orgin_city,
-            'Destination': dest_city,
-            'Date': start_date,
+        list_dict.append({
+            'country_id': country_id,
+            'origin_id': origin_id,
+            'destination_id': destination_id,
+            'Date': date,
             'DepartureTime': d,
             'ArrivalTime': a,
             'Price': p
         })
-    print(dict)
+    total_data = {
+        'data': list_dict,
+        'total_size': total_size,
+        'order': order,
+        'hash_id': hash_id,
+    }
+    return total_data
 
-asyncio.get_event_loop().run_until_complete(get_info('Berlin', 'Paris', datetime.datetime.today(),logger=None))
+
+# asyncio.get_event_loop().run_until_complete(get_info('Berlin', 'Paris', datetime.datetime.today(),logger=None))

@@ -2,16 +2,16 @@ from pyppeteer import launch
 import asyncio
 import logging
 import datetime
+import time
+import sys
 
 
-async def get_info(origin, destination,date,logger):
+async def get_info(page,country_id,origin,origin_id, destination,destination_id,total_size,hash_id,order,date,logger):
 
     dep_times = []
     prices = []
     date = date.strftime('%d/%m/%Y')
-    dict = []
-    browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
-    page = await browser.newPage()
+    list_dict = []
     await page.goto('https://lines.gunsel.ua/en', timeout=90000)
     await page.waitForXPath('//*[@id="select2-fromStation-container"]',{'visible': True, 'timeout': 50000})
     await page.click('[id=select2-fromStation-container]',{'clickCount': 1})
@@ -19,16 +19,14 @@ async def get_info(origin, destination,date,logger):
     try:
         await page.keyboard.press('Enter')
     except Exception:
-        # logger.error('Invalid Origin City Name')
-        print('Invalid Origin City Name')
+        logger.error('Invalid Origin City Name')
     await page.waitForXPath(' //*[@id="select2-toStation-container"]',{'visible': True, 'timeout': 50000})
     await page.click('[id=select2-toStation-container]',{'clickCount': 1})
     await page.type('[id=toStationParent]', destination)
     try:
         await page.keyboard.press('Enter')
     except Exception:
-        # logger.error('Invalid Destination City Name')
-        print('Invalid Destination City Name')
+        logger.error('Invalid Destination City Name')
     await page.waitForXPath('//*[@id="travelDate"]',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).removeAttribute("readonly")''', "#travelDate")
     await page.click('[id=travelDate]',{'clickCount': 3})
@@ -38,9 +36,9 @@ async def get_info(origin, destination,date,logger):
     await search_button.click()
     await asyncio.wait([page.waitForXPath('//tr/td[contains(@class,"date-time")]',{'visible': True, 'timeout': 90000})])
 
-    time = await page.xpath('//tr/td[contains(@class,"date-time")]')
+    times = await page.xpath('//tr/td[contains(@class,"date-time")]')
     price = await page.xpath('//div[contains(@class,"price-column w-100")]')
-    for t in time:
+    for t in times:
         time_txt = await page.evaluate('(element) => element.textContent', t)
         dep_times.append(time_txt)
     departure_times = dep_times[::2]
@@ -53,15 +51,23 @@ async def get_info(origin, destination,date,logger):
     new_prices = [x[0:8] for x in prices]
 
     for d,a,p in zip(departure_times,arrival_times,new_prices):
-        dict.append({
-            'Origin': origin,
-            'Destination': destination,
+        list_dict.append({
+            'country_id': country_id,
+            'origin_id': origin_id,
+            'destination_id': destination_id,
             'Date': date,
             'DepartureTime': d.strip(' '),
             'ArrivalTime': a.strip(' '),
             'Price': p
         })
-    print(dict)
+    total_data = {
+        'data': list_dict,
+        'total_size': total_size,
+        'order': order,
+        'hash_id': hash_id,
+    }
+    return total_data
+
 
 asyncio.get_event_loop().run_until_complete(get_info('Odessa', 'Kyiv',datetime.datetime.today(),logger=None))
 

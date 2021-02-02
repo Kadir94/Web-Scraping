@@ -2,16 +2,16 @@ from pyppeteer import launch
 import asyncio
 import logging
 import datetime
+import time
+import sys
 
 
-async def get_info(origin, destination,date,logger):
+async def get_info(page,country_id,origin,origin_id, destination,destination_id,total_size,hash_id,order,date,logger):
 
     departure_time = []
     price = []
     date = date.strftime('%d/%m/%Y')
-    dict = []
-    browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
-    page = await browser.newPage()
+    list_dict = []
     await page.goto('https://www.irishrail.ie/', timeout=90000)
     await page.waitForXPath('//*[@id="CybotCookiebotDialogBody"]',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#CybotCookiebotDialogBodyButtonAccept")
@@ -23,15 +23,12 @@ async def get_info(origin, destination,date,logger):
     try:
         await page.waitForXPath("//*[@id='suggestion']", {'visible': True, 'timeout': 7000})
     except Exception:
-        # logger.info('No suggestions1')
-        print('No suggestions1')
+        logger.info('No suggestions1')
     if suggestion_1:
         try:
             await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#\30 ")
         except Exception:
-            print("lol")
-            # logger.error('can not click the suggestion1')
-
+            logger.error('can not click the suggestion1')
     await page.keyboard.press('Enter')
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#HFS_to")
     await page.type('[id=HFS_to]', destination)
@@ -39,14 +36,12 @@ async def get_info(origin, destination,date,logger):
     try:
         await page.waitForXPath("//*[@id='suggestion']", {'visible': True, 'timeout': 7000})
     except Exception:
-        # logger.info('No suggestions2')
-        print('No suggestions2')
+        logger.info('No suggestions2')
     if suggestion_2:
         try:
             await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#\30 ")
         except Exception:
-            # logger.error('can not click the suggestion2')
-            print('No  click suggestions2')
+            logger.error('can not click the suggestion2')
     await page.keyboard.press('Enter')
     await page.evaluate('''(selector) => document.querySelector(selector).removeAttribute("readonly")''', "#HFS_date_REQ0")
     await page.evaluate('''(selector) => document.querySelector(selector).removeAttribute("aria-haspopup")''', "#HFS_date_REQ0")
@@ -67,13 +62,21 @@ async def get_info(origin, destination,date,logger):
         prices_txt = await page.evaluate('(element) => element.textContent', p)
         price.append(prices_txt)
     for d, a, p in zip(departure_time,arrival_time, price):
-         dict.append({
-            'Origin': origin,
-            'Destanation': destination,
+        list_dict.append({
+            'country_id': country_id,
+            'origin_id': origin_id,
+            'destination_id': destination_id,
             'Date': date,
             'DepartureTime': d,
             'ArrivalTime': a,
             'Price': p
-         })
-    print(dict)
-asyncio.get_event_loop().run_until_complete(get_info('Dublin Connolly', 'Limerick (Colbert)',datetime.datetime.today(),logger=None))
+        })
+    total_data = {
+        'data': list_dict,
+        'total_size': total_size,
+        'order': order,
+        'hash_id': hash_id,
+    }
+    return total_data
+
+# asyncio.get_event_loop().run_until_complete(get_info('Dublin Connolly', 'Limerick (Colbert)',datetime.datetime.today(),logger=None))

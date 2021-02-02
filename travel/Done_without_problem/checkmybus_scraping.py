@@ -3,19 +3,8 @@ import asyncio
 import logging
 
 
-async def get_info(origin, destination,date):
+async def get_info(page,country_id,origin,origin_id, destination,destination_id,total_size,hash_id,order,date,logger):
 
-    logger = logging.getLogger('Scrape App')
-    logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('../scrape.log')
-    fh.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.ERROR)
-    formatter = logging.Formatter('%(asctime)s-%(name)s-%(levelname)s,%(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
-    logger.addHandler(fh)
-    logger.addHandler(ch)
     arr_times = []
     dep_times = []
     locs = []
@@ -31,7 +20,7 @@ async def get_info(origin, destination,date):
     await page.waitForXPath('//*[@id="origincityname"]',{'visible': True, 'timeout': 50000})
     await page.click('[id=origincityname]',{'clickCount': 1})
     await page.type('[id=origincityname]', origin)
-    departure_choice = await page.waitForXPath('//*[@id="searchform"]/fieldset/div/div/div',{'visible': True, 'timeout': 50000})
+    departure_choice = await page.waitForXPath(f'//div[contains(text(),"{origin}")]',{'visible': True, 'timeout': 50000})
     try:
         await departure_choice.click()
     except Exception:
@@ -39,7 +28,7 @@ async def get_info(origin, destination,date):
 
     await page.click('[id=destinationcityname]',{'clickCount': 1})
     await page.type('[id=destinationcityname]', destination)
-    arrival_choice = await page.waitForXPath('//*[@id="searchform"]/fieldset/div[2]/div/div',{'visible': True, 'timeout': 50000})
+    arrival_choice = await page.waitForXPath(f'//div[contains(text(),"{destination}")]',{'visible': True, 'timeout': 50000})
     try:
         await arrival_choice.click()
     except Exception:

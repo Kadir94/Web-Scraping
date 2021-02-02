@@ -2,17 +2,16 @@ from pyppeteer import launch
 import asyncio
 import logging
 import datetime
+import time
+import sys
 
-async def get_info(origin, destination,date,logger):
 
-
+async def get_info(page,country_id,origin,origin_id, destination,destination_id,total_size,hash_id,order,date,logger):
 
     departure_time = []
     arrival_time = []
     prices = []
-    dep_loc = []
-    arr_loc = []
-    dict = []
+    list_dict = []
     date = date.strftime('%d.%m.%Y')
     browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
     page = await browser.newPage()
@@ -52,16 +51,23 @@ async def get_info(origin, destination,date,logger):
     del prices[0]
 
     for d, a, p in zip(departure_time,arrival_time, prices):
-         dict.append({
-            'Origin': origin,
-            'Destanation': destination,
+        list_dict.append({
+            'country_id': country_id,
+            'origin_id': origin_id,
+            'destination_id': destination_id,
             'Date': date,
             'DepartureTime': d,
             'ArrivalTime': a,
             'Price': p
-         })
-    print(dict)
+        })
+    total_data = {
+        'data': list_dict,
+        'total_size': total_size,
+        'order': order,
+        'hash_id': hash_id,
+    }
+    return total_data
 
-asyncio.get_event_loop().run_until_complete(get_info('Rīga', 'Jelgava',datetime.datetime.today(),logger=None))
+# asyncio.get_event_loop().run_until_complete(get_info('Rīga', 'Jelgava',datetime.datetime.today(),logger=None))
 
 

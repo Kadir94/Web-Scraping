@@ -2,17 +2,17 @@ from pyppeteer import launch
 import asyncio
 import logging
 import datetime
+import time
+import sys
 
 
-async def get_info(origin, destination,date,logger):
+async def get_info(page,country_id,origin,origin_id, destination,destination_id,total_size,hash_id,order,date,logger):
 
     departure_time = []
     prices = []
-    dict = []
+    list_dict = []
 
     date = date.strftime('%Y.%#m.%#d')
-    browser = await launch(headless=False, autoClose=False, width=2400, height=2400)
-    page = await browser.newPage()
     await page.goto('https://www.intercity.co.nz/', timeout=90000)
     await page.waitForXPath('//*[@id="BookTravelForm_getBookTravelForm_from"]',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', " #BookTravelForm_getBookTravelForm_from")
@@ -23,19 +23,19 @@ async def get_info(origin, destination,date,logger):
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', " #BookTravelForm_getBookTravelForm_to")
     await page.keyboard.press('Backspace')
     await page.type('[id=BookTravelForm_getBookTravelForm_to]', destination)
+    await page.keyboard.press('Enter')
     choice = None
     try:
         choice = await page.waitForXPath('//div/ul[@class="autocomplete-list"]', {'visible': True, 'timeout': 7000})
     except Exception:
-        # logger.info('No Possible questions')
-        print('No Possible questions')
+        logger.info('No Possible questions')
     if choice:
         first_link_dep = await choice.xpath("//div/ul/li[@class='autocomplete-suggestion']")
         try:
             await first_link_dep[0].click()
         except Exception:
-            # logger.error('Did not work -> Date')
-            print('Did not work -> Date')
+            logger.error('Did not work -> Date')
+
     await page.waitForXPath('//*[@id="BookTravelForm_getBookTravelForm_date"]',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#BookTravelForm_getBookTravelForm_date")
     await page.waitForXPath('//div/div[contains(@class,"month-wrapper")]',{'visible': True, 'timeout': 50000})
@@ -45,14 +45,12 @@ async def get_info(origin, destination,date,logger):
     year = date.split('.')[0]
     month_wanted = None
     day_wanted = None
-    # next_button = await page.waitForXPath('//th/span[@class="next"]',{'visible': True, 'timeout': 9000})
-    # await next_button.click()
+
     while True:
         try:
             month_wanted = await page.waitForXPath(f'//div/table/thead/tr/th[contains(text(),"{months[int(month)]+" "+year}")]',timeout=1000)
         except Exception:
-            print("lol1")
-            # logger.info('Cannot pick the month')
+            logger.info('Cannot pick the month')
         if month_wanted:
             print("month found")
             break
@@ -61,13 +59,12 @@ async def get_info(origin, destination,date,logger):
                 next_button = await page.waitForXPath('//th/span[@class="next"]')
                 await next_button.click()
             except Exception:
-                print("lol3")
-                # logger.info('Cannot click the next month button')
+                logger.info('Cannot click the next month button')
     while True:
         try:
             day_wanted = await page.waitForXPath(f'//table/tbody/tr/td/div[contains(text(),"{day}")]',{'visible': True, 'timeout': 7000})
         except Exception:
-            print("lol")
+            logger.info('Cannot find the day')
         if day_wanted:
             await day_wanted.click()
             break
@@ -76,9 +73,7 @@ async def get_info(origin, destination,date,logger):
                 next_button = await page.waitForXPath('//th/span[@class="next"]')
                 await next_button.click()
             except Exception:
-                print("lol3")
-                # logger.info('Cannot click the next month button')
-                print('Cannot click the next month button')
+                logger.info('Cannot click the next month button')
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', " #BookTravelForm_getBookTravelForm_action_submit")
     await asyncio.wait([page.waitForXPath('//ul/li[contains(@class,"fare-item js-fare-item")]',{'visible': True, 'timeout': 90000})])
     await asyncio.wait([page.waitForXPath('//div[contains(@class,"summary-price")]',{'visible': True, 'timeout': 90000})])
@@ -89,11 +84,9 @@ async def get_info(origin, destination,date,logger):
         departure_time.append(dp_time_txt)
         departure_time = [x.replace('\n', '') for x in departure_time]
         departure_time = [x.strip('                  ') for x in departure_time]
-    time = departure_time[1::2]
-    arrival_tim = time[1::2]
-    departure_tim = time[::2]
-    print(departure_tim)
-    print(arrival_tim)
+    times = departure_time[1::2]
+    arrival_tim = times[1::2]
+    departure_tim = times[::2]
     for i in price:
         price_txt = await page.evaluate('(element) => element.textContent', i)
         prices.append(price_txt)
@@ -104,14 +97,22 @@ async def get_info(origin, destination,date,logger):
     prices = prices[::2]
     prices = prices[1::2]
     for d, a, p in zip(departure_tim, arrival_tim, prices):
-         dict.append({
-            'Origin': origin,
-            'Destanation': destination,
+        list_dict.append({
+            'country_id': country_id,
+            'origin_id': origin_id,
+            'destination_id': destination_id,
             'Date': date,
             'DepartureTime': d,
             'ArrivalTime': a,
             'Price': p
-         })
-    print(dict)
+        })
+    total_data = {
+        'data': list_dict,
+        'total_size': total_size,
+        'order': order,
+        'hash_id': hash_id,
+    }
+    return total_data
 
-asyncio.get_event_loop().run_until_complete(get_info('Auckland - Central', 'Hamilton - Central',datetime.datetime.today(),logger=None))
+
+
