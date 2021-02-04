@@ -1,9 +1,9 @@
-from pyppeteer import launch
-import asyncio
-import logging
-import datetime
-import time
-import sys
+from datetime import datetime
+from pyppeteer.page import PageError, Page
+from pyppeteer.errors import TimeoutError
+from logging import Logger
+from configurations.settings import DARK_PURPLE, ENDE, INBOX, LIGHT_BLUE
+from typing import Dict
 
 
 async def get_info(page,country_id,origin,origin_id, destination,destination_id,total_size,hash_id,order,date,logger):
@@ -12,27 +12,40 @@ async def get_info(page,country_id,origin,origin_id, destination,destination_id,
     prices = []
     list_dict = []
     car = "A4 Avant (2008 +)"
-    date = date.strftime('%Y-%#m-%#d')
-    await page.goto('https://www.directferries.de/', timeout=90000)
-    await page.waitForXPath('//*[@id="deal_finder1"]/div/section/label',{'visible': True, 'timeout': 50000})
+    date_ = datetime.fromisoformat(date)
+    date_ = date_.strftime('%Y-%#m-%#d')
+    try:
+        await page.goto('https://www.directferries.de/', timeout=90000)
+    except (TimeoutError, PageError):
+        logger.error(f'{DARK_PURPLE}Page either crushed or time exceeded{ENDE}')
+    try:
+        await page.waitForXPath('//*[@id="deal_finder1"]/div/section/label',{'visible': True, 'timeout': 50000})
+    except TimeoutError:
+        logger.error(f'{DARK_PURPLE}Could not locate {ENDE}{INBOX}{LIGHT_BLUE}"XPATH=//*[@id="deal_finder1"]/div/section/label ..."{ENDE}')
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#deal_finder1 > div.deal_finder_wrap > section.journey_type > label:nth-child(2)")
-
-    await page.waitForXPath('//*[@id="route_outbound"]',{'visible': True, 'timeout': 50000})
+    try:
+        await page.waitForXPath('//*[@id="route_outbound"]',{'visible': True, 'timeout': 50000})
+    except TimeoutError:
+        logger.error(f'{DARK_PURPLE}Could not locate {ENDE}{INBOX}{LIGHT_BLUE}"XPATH=//*[@id="route_outbound"] ..."{ENDE}')
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#route_outbound")
     await page.type('#route_outbound', origin)
     await page.type('#route_outbound', destination)
-    await asyncio.sleep(2)
-    await page.waitForXPath('//*[@id="journey_route_parent"]/div/aside/ul/li',{'visible': True, 'timeout': 50000})
+    try:
+        await page.waitForXPath('//*[@id="journey_route_parent"]/div/aside/ul/li',{'visible': True, 'timeout': 50000})
+    except TimeoutError:
+        logger.error(f'{DARK_PURPLE}Could not locate {ENDE}{INBOX}{LIGHT_BLUE}"XPATH=//*[@id="journey_route_parent"]/div/aside/ul/li ..."{ENDE}')
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#journey_route_parent > div:nth-child(16) > aside > ul > li:nth-child(1)")
-
-    await page.waitForXPath('//div/section[contains(@class,"journey_timing timing_outbound hide_until_times")]',{'visible': True, 'timeout': 50000})
+    try:
+        await page.waitForXPath('//div/section[contains(@class,"journey_timing timing_outbound hide_until_times")]',{'visible': True, 'timeout': 50000})
+    except TimeoutError:
+        logger.error(f'{DARK_PURPLE}Could not locate {ENDE}{INBOX}{LIGHT_BLUE}"XPATH=//div/section[contains(@class,"journey_timing timing_outbound hide_until_times")] ..."{ENDE}')
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#deal_finder1 > div.deal_finder_wrap > section.journey_timing.timing_outbound.hide_until_times")
     date_wanted = None
     while True:
         try:
-            date_wanted = await page.waitForXPath(f'//div[@data-full="{date}"]',timeout=1000)
-        except Exception:
-            logger.info('Cannot pick the date')
+            date_wanted = await page.waitForXPath(f'//div[@data-full="{date_}"]',timeout=1000)
+        except TimeoutError:
+            logger.error(f'{DARK_PURPLE}Could not locate {ENDE}{INBOX}{LIGHT_BLUE}"XPATH=//div[@data-full=..."{ENDE}')
         if date_wanted:
             await date_wanted.click()
             break
@@ -40,8 +53,8 @@ async def get_info(page,country_id,origin,origin_id, destination,destination_id,
             try:
                 next_button = await page.waitForXPath('//div[@aria-label="Next Month"]')
                 await next_button.click()
-            except Exception:
-                logger.info('Cannot click the next month button')
+            except TimeoutError:
+                logger.error(f'{DARK_PURPLE}Could not locate {ENDE}{INBOX}{LIGHT_BLUE}"XPATH=//div[@aria-label="Next Month"]..."{ENDE}')
     await page.waitForXPath('//*[@id="deal_finder1"]/div/button',{'visible': True, 'timeout': 50000})
     await page.evaluate('''(selector) => document.querySelector(selector).click()''',"#deal_finder1 > div.deal_finder_wrap > button")
     await page.waitForXPath('//*[@id="deal_finder1"]/div/button',{'visible': True, 'timeout': 50000})
@@ -101,8 +114,7 @@ async def get_info(page,country_id,origin,origin_id, destination,destination_id,
     return total_data
 
 
-
-asyncio.get_event_loop().run_until_complete(get_info('Calais ', '- Dover',datetime.datetime.today(),logger=None))
+# asyncio.get_event_loop().run_until_complete(get_info('Calais ', '- Dover',datetime.today(),logger=None))
 
 
 

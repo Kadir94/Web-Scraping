@@ -1,56 +1,78 @@
-from pyppeteer import launch
-import asyncio
-import logging
-import datetime
-import time
-import sys
+from datetime import datetime
+from pyppeteer.page import PageError, Page
+from pyppeteer.errors import TimeoutError
+from logging import Logger
+from configurations.settings import DARK_PURPLE, ENDE, INBOX, LIGHT_BLUE
+from typing import Dict
 
 
-async def get_info(page,country_id,origin,origin_id, destination,destination_id,total_size,hash_id,order,date,logger):
+async def get_info(page,country_id,origin,origin_id, destination,destination_id,total_size,hash_id,order,date,logger:Logger) -> Dict:
 
     departure_time = []
     price = []
-    date = date.strftime('%d/%m/%Y')
+    date_ = datetime.fromisoformat(date)
+    date_ = date_.strftime('%d/%m/%Y')
     list_dict = []
-    await page.goto('https://www.irishrail.ie/', timeout=90000)
-    await page.waitForXPath('//*[@id="CybotCookiebotDialogBody"]',{'visible': True, 'timeout': 50000})
+    try:
+        await page.goto('https://www.irishrail.ie/', timeout=90000)
+    except (TimeoutError, PageError):
+        logger.error(f'{DARK_PURPLE}Page either crushed or time exceeded{ENDE}')
+    try:
+        await page.waitForXPath('//*[@id="CybotCookiebotDialogBody"]',{'visible': True, 'timeout': 50000})
+    except TimeoutError:
+        logger.error(f'{DARK_PURPLE}Could not locate {ENDE}{INBOX}{LIGHT_BLUE}"XPATH=//*[@id="CybotCookiebotDialogBody"] ..."{ENDE}')
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#CybotCookiebotDialogBodyButtonAccept")
-
-    await page.waitForXPath('//*[@id="HFS_from"]',{'visible': True, 'timeout': 50000})
+    try:
+        await page.waitForXPath('//*[@id="HFS_from"]',{'visible': True, 'timeout': 50000})
+    except TimeoutError:
+        logger.error(f'{DARK_PURPLE}Could not locate {ENDE}{INBOX}{LIGHT_BLUE}"XPATH=//*[@id="CybotCookiebotDialogBody"] ..."{ENDE}')
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#HFS_from")
     await page.type('[id=HFS_from]', origin)
     suggestion_1 = None
     try:
         await page.waitForXPath("//*[@id='suggestion']", {'visible': True, 'timeout': 7000})
-    except Exception:
-        logger.info('No suggestions1')
+    except TimeoutError:
+        logger.error(f'{DARK_PURPLE}Could not locate {ENDE}{INBOX}{LIGHT_BLUE}"XPATH=//*[@id="suggestion"] ..."{ENDE}')
     if suggestion_1:
         try:
             await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#\30 ")
-        except Exception:
-            logger.error('can not click the suggestion1')
+        except TimeoutError:
+            logger.error(f'{DARK_PURPLE}Could not click {ENDE}{INBOX}{LIGHT_BLUE}"XPATH=//*[@id="suggestion"] ..."{ENDE}')
     await page.keyboard.press('Enter')
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#HFS_to")
     await page.type('[id=HFS_to]', destination)
     suggestion_2 = None
     try:
         await page.waitForXPath("//*[@id='suggestion']", {'visible': True, 'timeout': 7000})
-    except Exception:
-        logger.info('No suggestions2')
+    except TimeoutError:
+        logger.error(f'{DARK_PURPLE}Could not locate (2) {ENDE}{INBOX}{LIGHT_BLUE}"XPATH=//*[@id="suggestion"] ..."{ENDE}')
     if suggestion_2:
         try:
             await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#\30 ")
-        except Exception:
-            logger.error('can not click the suggestion2')
+        except TimeoutError:
+            logger.error(f'{DARK_PURPLE}Could not click (2) {ENDE}{INBOX}{LIGHT_BLUE}"XPATH=//*[@id="suggestion"] ..."{ENDE}')
     await page.keyboard.press('Enter')
     await page.evaluate('''(selector) => document.querySelector(selector).removeAttribute("readonly")''', "#HFS_date_REQ0")
     await page.evaluate('''(selector) => document.querySelector(selector).removeAttribute("aria-haspopup")''', "#HFS_date_REQ0")
     await page.click('[id=HFS_date_REQ0]',{'clickCount': 3})
     await page.keyboard.press('Backspace')
-    await page.type('#HFS_date_REQ0', date)
-
+    await page.type('#HFS_date_REQ0', date_)
     await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#HafasQueryForm > div.f02__cta > button")
-    await asyncio.wait([page.waitForXPath('//div[contains(@class,"lyr_itemResults")]',{'visible': True, 'timeout': 50000})])
+    try:
+        await page.waitForXPath('//div[contains(@class,"lyr_itemResults")]',{'visible': True, 'timeout': 50000})
+    except TimeoutError:
+        logger.error(f'{DARK_PURPLE} No {ENDE}{INBOX}{LIGHT_BLUE}"FINAL RESULTS"{ENDE}')
+        return {
+            'country_id': country_id,
+            'origin_id': origin_id,
+            'destination_id': destination_id,
+
+            'data': [],
+            'total_size': total_size,
+            'order': order,
+            'hash_id': hash_id,
+            'status': 400  # No data found
+        }
     dep_time = await page.xpath('//div/div[contains(@class,"lyr_timeRow lyr_plantime")]')
     prices = await page.xpath('//div/div/span[contains(@class,"lyr_bigValue")]')
     for i in dep_time:
@@ -63,19 +85,20 @@ async def get_info(page,country_id,origin,origin_id, destination,destination_id,
         price.append(prices_txt)
     for d, a, p in zip(departure_time,arrival_time, price):
         list_dict.append({
-            'country_id': country_id,
-            'origin_id': origin_id,
-            'destination_id': destination_id,
             'Date': date,
             'DepartureTime': d,
             'ArrivalTime': a,
             'Price': p
         })
     total_data = {
+        'country_id': country_id,
+        'origin_id': origin_id,
+        'destination_id': destination_id,
         'data': list_dict,
         'total_size': total_size,
         'order': order,
         'hash_id': hash_id,
+        'status': 200  # Success
     }
     return total_data
 
