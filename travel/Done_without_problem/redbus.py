@@ -9,7 +9,7 @@ async def get_info(origin, destination,date,logger):
     departure_time = []
     arrival_time = []
     prices = []
-    dict = []
+    list_dict = []
     date = date.strftime('%Y.%#m.%#d')
     browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
     page = await browser.newPage()
@@ -71,34 +71,47 @@ async def get_info(origin, destination,date,logger):
             break
         else:
             try:
-                next_button = await calendar.xpath('//td[@class="next"]')
-                await next_button[0].click()
+                # next_button = await calendar.xpath('//td[@class="next"]')
+                await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#rb-calendar_onward_cal > table > tbody > tr.rb-monthHeader > td.next > button")
             except Exception:
                 print("lol3")
                 # logger.info('Cannot click the next month button')
     while True:
         try:
-            day_wanted = await calendar.xpath(f'//td[contains(text(),"{day}")]')
+            day_wanted = await page.waitForXPath(f'//tdcontains(text(),"{day}")]',{'visible': True, 'timeout': 50000})
         except Exception:
             print("lolday")
         if day_wanted:
-            print('dayFound')
-            try:
-                await day_wanted.click()
-            except Exception:
-                print('can not click day')
+            print("day wanted")
+            await day_wanted[0].click()
             break
         else:
             try:
-                next_button = await calendar.xpath('//td[@class="next"]')
-                await next_button[0].click()
+                await page.evaluate('''(selector) => document.querySelector(selector).click()''', "#rb-calendar_onward_cal > table > tbody > tr.rb-monthHeader > td.next > button")
+
+                # next_button = await calendar.xpath('//td[@class="next"]')
+                # await next_button[0].click()
             except Exception:
                 print("lol3")
                 # logger.info('Cannot click the next month button')
 
     await page.click('[id=search_btn]',{'clickCount': 1})
-
-    await asyncio.wait([page.waitForXPath('//div[contains(@class,"clearfix bus-item")]',{'visible': True, 'timeout': 50000})])
+    try:
+        await page.waitForXPath('//div[contains(@class,"clearfix bus-item")]',{'visible': True, 'timeout': 50000})
+    except TimeoutError:
+        print("timeout")
+        # logger.error(f'{DARK_PURPLE} No {ENDE}{INBOX}{LIGHT_BLUE}"FINAL RESULTS"{ENDE}')
+        # return {
+        #     'country_id': country_id,
+        #     'origin_id': origin_id,
+        #     'destination_id': destination_id,
+        #
+        #     'data': [],
+        #     'total_size': total_size,
+        #     'order': order,
+        #     'hash_id': hash_id,
+        #     'status': 400  # No data found
+        # }
     dp_time = await page.xpath('//div[contains(@class,"dp-time")]')
     arr_time = await page.xpath('//div[contains(@class,"bp-time")]')
     price = await page.xpath('//div/div/span[contains(@class,"f-19 f-bold")]')
@@ -115,7 +128,7 @@ async def get_info(origin, destination,date,logger):
         prices.append(price_txt)
     print(prices)
     for d, a, p in zip(departure_time,arrival_time, prices):
-         dict.append({
+         list_dict.append({
             'Origin': origin,
             'Destanation': destination,
             'Date': date,
@@ -127,3 +140,4 @@ async def get_info(origin, destination,date,logger):
 asyncio.get_event_loop().run_until_complete(get_info('Trujillo (All Locations)', 'Lima (All Locations)',datetime.datetime.today(),logger=None))
 
 
+# [contains(text(),"{day}")]
