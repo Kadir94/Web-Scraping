@@ -1,2 +1,5 @@
 pyppeteer
 asyncio
+aiohttp
+cchardet
+aiodns
