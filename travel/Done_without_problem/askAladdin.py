@@ -1,4 +1,6 @@
 from datetime import datetime
+
+from currency_converter import CurrencyConverter
 from pyppeteer.page import PageError, Page
 from pyppeteer.errors import TimeoutError
 from logging import Logger
@@ -6,27 +8,26 @@ from logging import Logger
 from typing import Dict
 from pyppeteer import launch
 import asyncio
-# async def get_info(origin,destination,date,logger):
 
 
 async def get_info(page,country_id,origin,origin_id, destination,destination_id,total_size,hash_id,order,date,logger:Logger) -> Dict:
 
     info = []
+    prices = []
     trip1 = None
     trip2 = None
     trip3 = None
-    trip4 = None
     list_dict = []
     date = None
     browser = await launch(headless=False, autoClose=False, width=1200, height=1200)
     page = await browser.newPage()
     try:
-        await page.goto('https://ask-aladdin.com/egypt-transport-system/bus-timetables/', timeout=200000)
+        await page.goto('https://ask-aladdin.com/egypt-transport-system/bus-timetables/', timeout=9000)
     except (TimeoutError, PageError):
         # logger.error(f'{DARK_PURPLE}Page either crushed or time exceeded{ENDE}')
         print('Timeout')
     try:
-        await page.waitForXPath('//div/div/div/h4/a[contains(@class,"accordion-toggle collapsed")]',{'visible': True, 'timeout': 50000})
+        await page.waitForXPath('//div/div/div/h4/a[contains(@class,"accordion-toggle collapsed")]',{'visible': True, 'timeout': 5000})
     except TimeoutError:
         print('Timeout1')
         # logger.error(f'{DARK_PURPLE}Could not locate {ENDE}{INBOX}{LIGHT_BLUE}"XPATH=//div/div/div/h4/a[contains(@class,"accordion-toggle collapsed")] ..."{ENDE}')
@@ -60,37 +61,34 @@ async def get_info(page,country_id,origin,origin_id, destination,destination_id,
         elif trip3 is None:
             try:
                 trip4 = await page.waitForXPath(f'//div/h4/a[contains(text(),"{origin+"/"+destination}")]',timeout=1000)
-            except TimeoutError:
-                print('Timeout5')
-                # logger.error(f'{DARK_PURPLE}Could not locate {ENDE}{INBOX}{LIGHT_BLUE}"XPATH=//div/h4/a[contains(text() ..."{ENDE}')
-        if trip4:
-            try:
                 await trip4.click()
             except TimeoutError:
+                # logger.error(f'{DARK_PURPLE}Could not locate {ENDE}{INBOX}{LIGHT_BLUE}"XPATH=//div/h4/a[contains(text() ..."{ENDE}')
                 print('Timeout6')
                 # logger.error(f'{DARK_PURPLE} No {ENDE}{INBOX}{LIGHT_BLUE}"FINAL RESULTS"{ENDE}')
-                break
-            return {
-                'country_id': country_id,
-                'origin_id': origin_id,
-                'destination_id': destination_id,
+                return {
+                    'country_id': country_id,
+                    'origin_id': origin_id,
+                    'destination_id': destination_id,
 
-                'data': [],
-                'total_size': total_size,
-                'order': order,
-                'hash_id': hash_id,
-                'status': 400  # No data found
-            }
-
+                    'data': [],
+                    'total_size': total_size,
+                    'order': order,
+                    'hash_id': hash_id,
+                    'status': 400  # No data found
+                }
     chosen = await page.xpath('//div/div[@aria-expanded="true"]/div/div/div/table/tbody/tr/td')
     for i in chosen:
         name = await page.evaluate('(element) => element.textContent', i)
         info.append(name)
-    company = info[3::3]
     dep_time = info[4::3]
     price = info[5::3]
-
-    for (c,d,p) in zip(company,dep_time,price):
+    converter = CurrencyConverter()
+    for p in price:
+        price = float(p.replace('\xa0', ' ').replace('EGP', '').replace('LE', ' '))
+        price = round(converter.convert(price, 'ZAR', 'EUR'),2)
+        prices.append(price)
+    for (d,p) in zip(dep_time, prices):
         list_dict.append({
             'Date': date,
             'DepartureTime': d.replace('\xa0', ''),
